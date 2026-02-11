@@ -20,8 +20,8 @@ class LearningService:
 
     @staticmethod
     def _client() -> AsyncOpenAI:
-        base_url = _get_env("AI_BASE_URL")
-        api_key = _get_env("AI_API_KEY")
+        base_url = _get_env("OPENAI_BASE_URL")
+        api_key = _get_env("OPENAI_API_KEY")
         app_url = os.getenv("APP_URL", "http://localhost:8000")
         app_name = os.getenv("APP_NAME", "EcoLearn AI")
 
@@ -43,7 +43,7 @@ class LearningService:
         focus_areas: Optional[List[str]] = None,
     ) -> Dict[str, Any]:
         focus_str = ", ".join(focus_areas) if focus_areas else "général"
-        model = _get_env("AI_MODEL", "openai/gpt-4o-mini")
+        model = _get_env("OPENAI_MODEL", "openai/gpt-4o-mini")
 
         system_prompt = (
             "Tu es un expert pédagogique spécialisé dans la création de contenu "
@@ -132,7 +132,7 @@ Réponds STRICTEMENT en JSON avec cette structure:
         difficulty: str,
         num_questions: int = 5,
     ) -> List[Dict[str, Any]]:
-        model = _get_env("AI_MODEL", "openai/gpt-4o-mini")
+        model = _get_env("OPENAI_MODEL", "openai/gpt-4o-mini")
 
         system_prompt = (
             "Tu es un expert en évaluation pédagogique. "
