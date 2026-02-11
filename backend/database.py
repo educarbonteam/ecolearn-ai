@@ -9,7 +9,7 @@ import os
 
 DATABASE_URL = os.getenv(
     "DATABASE_URL",
-    "postgresql://ecolearn:ecolearn2024@db:5432/ecolearn_db"
+    "postgresql://ecolearn:ecolearn2024@db:5432/ecolearn-db"
 )
 
 engine = create_engine(DATABASE_URL, pool_pre_ping=True)

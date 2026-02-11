@@ -222,7 +222,7 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 from typing import Generator
 
-DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://ecolearn:ecolearn2024@localhost:5432/ecolearn_db")
+DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://ecolearn:ecolearn2024@localhost:5432/ecolearn-db")
 
 # Support SSL pour RDS
 connect_args = {}
@@ -260,7 +260,7 @@ services:
   db:
     image: postgres:15-alpine
     environment:
-      POSTGRES_DB: ecolearn_db
+      POSTGRES_DB: ecolearn-db
       POSTGRES_USER: ecolearn
       POSTGRES_PASSWORD: ecolearn2024
     volumes:
@@ -271,7 +271,7 @@ services:
   backend:
     build: ./backend
     environment:
-      DATABASE_URL: postgresql://ecolearn:ecolearn2024@db:5432/ecolearn_db
+      DATABASE_URL: postgresql://ecolearn:ecolearn2024@db:5432/ecolearn-db
       OPENAI_API_KEY: ${OPENAI_API_KEY}
     ports:
       - "8000:8000"
@@ -392,7 +392,7 @@ aws logs put-retention-policy --log-group-name /ecs/${PROJECT}-frontend --retent
 echo "✅ CloudWatch Logs créés"
 
 # 10. Secrets Manager
-DB_URL="postgresql://ecolearn:PASSWORD@${RDS_ENDPOINT}:5432/ecolearn_db"
+DB_URL="postgresql://ecolearn:PASSWORD@${RDS_ENDPOINT}:5432/ecolearn-db"
 aws secretsmanager create-secret --name ${PROJECT}/database-url --secret-string "$DB_URL"
 aws secretsmanager create-secret --name ${PROJECT}/jwt-secret --secret-string "$(openssl rand -base64 32)"
 aws secretsmanager create-secret --name ${PROJECT}/openai-key --secret-string "CHANGEME"

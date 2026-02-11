@@ -193,7 +193,7 @@ from typing import Generator
 # Support environment variable (AWS Secrets Manager)
 DATABASE_URL = os.getenv(
     "DATABASE_URL",
-    "postgresql://ecolearn:ecolearn2024@db:5432/ecolearn_db"
+    "postgresql://ecolearn:ecolearn2024@db:5432/ecolearn-db"
 )
 
 # Configuration pour RDS avec SSL

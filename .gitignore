@@ -97,6 +97,3 @@ Thumbs.db
 .dmypy.json
 dmypy.json
 
-# Monitoring
-prometheus_data/
-grafana_data/

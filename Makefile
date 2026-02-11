@@ -120,7 +120,7 @@ migrate-create: ## Create new migration (use: make migrate-create MSG="descripti
 
 db-shell: ## Open database shell
 	@echo "$(YELLOW)Connecting to database...$(NC)"
-	docker-compose exec db psql -U ecolearn -d ecolearn_db
+	docker-compose exec db psql -U ecolearn -d ecolearn-db
 
 backend-shell: ## Open backend shell
 	@echo "$(YELLOW)Opening backend shell...$(NC)"
@@ -145,7 +145,7 @@ reset: clean ## Reset everything (clean + rebuild)
 backup: ## Backup database
 	@echo "$(YELLOW)Creating database backup...$(NC)"
 	@mkdir -p backups
-	docker-compose exec -T db pg_dump -U ecolearn ecolearn_db > backups/backup_$$(date +%Y%m%d_%H%M%S).sql
+	docker-compose exec -T db pg_dump -U ecolearn ecolearn-db > backups/backup_$$(date +%Y%m%d_%H%M%S).sql
 	@echo "$(GREEN)✓ Backup created in backups/$(NC)"
 
 restore: ## Restore database (use: make restore FILE=backups/backup.sql)
@@ -154,7 +154,7 @@ restore: ## Restore database (use: make restore FILE=backups/backup.sql)
 		exit 1; \
 	fi
 	@echo "$(YELLOW)Restoring database from $(FILE)...$(NC)"
-	docker-compose exec -T db psql -U ecolearn -d ecolearn_db < $(FILE)
+	docker-compose exec -T db psql -U ecolearn -d ecolearn-db < $(FILE)
 	@echo "$(GREEN)✓ Database restored$(NC)"
 
 deploy-aws: ## Deploy to AWS ECS
@@ -162,12 +162,6 @@ deploy-aws: ## Deploy to AWS ECS
 	chmod +x scripts/deploy-aws.sh
 	./scripts/deploy-aws.sh
 	@echo "$(GREEN)✓ Deployment initiated$(NC)"
-
-monitoring: ## Open monitoring dashboards
-	@echo "$(BLUE)Opening monitoring dashboards...$(NC)"
-	@echo "Prometheus: http://localhost:9090"
-	@echo "Grafana:    http://localhost:3001"
-	@command -v open > /dev/null && open http://localhost:3001 || xdg-open http://localhost:3001 2>/dev/null || echo "Please open http://localhost:3001 manually"
 
 docs: ## Generate API documentation
 	@echo "$(YELLOW)Opening API documentation...$(NC)"

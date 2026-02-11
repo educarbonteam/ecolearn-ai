@@ -13,7 +13,6 @@
 ✅ **Frontend React** avec interface complète  
 ✅ **Base PostgreSQL** avec 7 tables  
 ✅ **Pipeline CI/CD** en 4 stages  
-✅ **Monitoring** Prometheus + Grafana  
 ✅ **Déploiement AWS** automatisé  
 ✅ **Documentation** exhaustive  
 
@@ -486,7 +485,6 @@ Consultez la section "Résolution de Problèmes" dans `START_HERE.md`
 ✨ **Documentation exhaustive**  
 ✨ **Tests automatisés**  
 ✨ **CI/CD complet**  
-✨ **Monitoring intégré**  
 ✨ **Déploiement simplifié**  
 ✨ **Scalable & maintenable**  
 

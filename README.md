@@ -16,7 +16,6 @@ Plateforme d'apprentissage intelligente propulsée par l'IA avec suivi d'impact 
 - [Déploiement Production](#-déploiement-production)
 - [API Documentation](#-api-documentation)
 - [Tests](#-tests)
-- [Monitoring](#-monitoring)
 - [CI/CD Pipeline](#-cicd-pipeline)
 
 ## 🎯 Vue d'Ensemble
@@ -74,7 +73,7 @@ EcoLearn AI est une plateforme d'apprentissage nouvelle génération qui combine
 ```yaml
 1. ecolearn_frontend  : React + Nginx       (Port 3000)
 2. ecolearn_backend   : FastAPI + Uvicorn   (Port 8000)
-3. ecolearn_db        : PostgreSQL 15       (Port 5432)
+3. ecolearn-db        : PostgreSQL 15       (Port 5432)
 4. prometheus         : Monitoring          (Port 9090)
 5. grafana            : Visualisations      (Port 3001)
 ```
@@ -168,8 +167,6 @@ docker-compose up -d
 - **Frontend** : http://localhost:3000
 - **Backend API** : http://localhost:8000
 - **API Docs** : http://localhost:8000/docs
-- **Prometheus** : http://localhost:9090
-- **Grafana** : http://localhost:3001 (admin/admin)
 
 ### 5. Créer un Utilisateur de Test
 
@@ -327,26 +324,6 @@ npm test -- --coverage
 ```bash
 docker-compose -f docker-compose.test.yml up --abort-on-container-exit
 ```
-
-## 📊 Monitoring
-
-### Métriques Prometheus
-
-Métriques disponibles :
-- `http_requests_total` - Nombre total de requêtes HTTP
-- `http_request_duration_seconds` - Durée des requêtes
-- `carbon_offset_total` - CO₂ total compensé
-- `trees_planted_total` - Arbres plantés
-- `active_users` - Utilisateurs actifs
-
-### Dashboards Grafana
-
-Accédez à http://localhost:3001 :
-
-1. **Application Metrics** : Performance API, latence, erreurs
-2. **Business Metrics** : Utilisateurs, cours, impact carbone
-3. **Infrastructure** : CPU, mémoire, réseau
-4. **Database** : Connexions, queries, performance
 
 ### CloudWatch (Production)
 

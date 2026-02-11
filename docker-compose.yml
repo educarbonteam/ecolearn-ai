@@ -4,10 +4,10 @@ services:
   # PostgreSQL Database
   db:
     image: postgres:15-alpine
-    container_name: ecolearn_db
+    container_name: ecolearn-db
     restart: unless-stopped
     environment:
-      POSTGRES_DB: ecolearn_db
+      POSTGRES_DB: ecolearn-db
       POSTGRES_USER: ecolearn
       POSTGRES_PASSWORD: ecolearn2024
       POSTGRES_INITDB_ARGS: "--encoding=UTF-8"
@@ -32,7 +32,7 @@ services:
     container_name: ecolearn_backend
     restart: unless-stopped
     environment:
-      DATABASE_URL: postgresql://ecolearn:ecolearn2024@db:5432/ecolearn_db
+      DATABASE_URL: postgresql://ecolearn:ecolearn2024@db:5432/ecolearn-db
       OPENAI_API_KEY: ${OPENAI_API_KEY}
       SECRET_KEY: ${SECRET_KEY:-your-secret-key-change-in-production}
       TREE_API_URL: ${TREE_API_URL:-https://api.tree-nation.com/v1}
@@ -61,48 +61,10 @@ services:
       - backend
     networks:
       - ecolearn_network
-
-  # Prometheus (Monitoring)
-  prometheus:
-    image: prom/prometheus:latest
-    container_name: ecolearn_prometheus
-    restart: unless-stopped
-    volumes:
-      - ./infra/prometheus.yml:/etc/prometheus/prometheus.yml
-      - prometheus_data:/prometheus
-    command:
-      - '--config.file=/etc/prometheus/prometheus.yml'
-      - '--storage.tsdb.path=/prometheus'
-    ports:
-      - "9090:9090"
-    networks:
-      - ecolearn_network
-
-  # Grafana (Visualization)
-  grafana:
-    image: grafana/grafana:latest
-    container_name: ecolearn_grafana
-    restart: unless-stopped
-    environment:
-      GF_SECURITY_ADMIN_USER: admin
-      GF_SECURITY_ADMIN_PASSWORD: admin
-      GF_INSTALL_PLUGINS: grafana-clock-panel
-    volumes:
-      - grafana_data:/var/lib/grafana
-      - ./infra/grafana/dashboards:/etc/grafana/provisioning/dashboards
-      - ./infra/grafana/datasources:/etc/grafana/provisioning/datasources
-    ports:
-      - "3001:3000"
-    depends_on:
-      - prometheus
-    networks:
-      - ecolearn_network
-
+      
 networks:
   ecolearn_network:
     driver: bridge
 
 volumes:
   postgres_data:
-  prometheus_data:
-  grafana_data:
