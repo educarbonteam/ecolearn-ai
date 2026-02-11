@@ -4,10 +4,10 @@ services:
   # PostgreSQL Database
   db:
     image: postgres:15-alpine
-    container_name: ecolearn-db
+    container_name: ecolearn
     restart: unless-stopped
     environment:
-      POSTGRES_DB: ecolearn-db
+      POSTGRES_DB: ecolearn
       POSTGRES_USER: ecolearn
       POSTGRES_PASSWORD: ecolearn2024
       POSTGRES_INITDB_ARGS: "--encoding=UTF-8"
@@ -32,7 +32,7 @@ services:
     container_name: ecolearn_backend
     restart: unless-stopped
     environment:
-      DATABASE_URL: postgresql://ecolearn:ecolearn2024@db:5432/ecolearn-db
+      DATABASE_URL: postgresql://ecolearn:ecolearn2024@db:5432/ecolearn
       OPENAI_API_KEY: ${OPENAI_API_KEY}
       SECRET_KEY: ${SECRET_KEY:-your-secret-key-change-in-production}
       TREE_API_URL: ${TREE_API_URL:-https://api.tree-nation.com/v1}

@@ -41,3 +41,6 @@ mypy==1.8.0
 
 # CORS
 python-dotenv==1.0.0
+
+# Email Validation
+email-validator==2.0.0

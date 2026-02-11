@@ -73,7 +73,7 @@ EcoLearn AI est une plateforme d'apprentissage nouvelle génération qui combine
 ```yaml
 1. ecolearn_frontend  : React + Nginx       (Port 3000)
 2. ecolearn_backend   : FastAPI + Uvicorn   (Port 8000)
-3. ecolearn-db        : PostgreSQL 15       (Port 5432)
+3. ecolearn        : PostgreSQL 15       (Port 5432)
 4. prometheus         : Monitoring          (Port 9090)
 5. grafana            : Visualisations      (Port 3001)
 ```

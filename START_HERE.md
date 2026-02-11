@@ -154,7 +154,7 @@ docker-compose ps
 Vous devriez voir 3 conteneurs `Up` :
 - ✅ `ecolearn_frontend`
 - ✅ `ecolearn_backend`
-- ✅ `ecolearn-db`
+- ✅ `ecolearn`
 
 ### 2. Test de l'API :
 ```bash
