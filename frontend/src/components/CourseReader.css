@@ -1,0 +1,802 @@
+/**
+ * CourseReader.css
+ * Styles pour l'interface de lecture des cours générés par l'IA
+ * 
+ * UTILISATION :
+ * import './CourseReader.css';
+ */
+
+/* ============================================
+   READER CONTAINER
+   ============================================ */
+
+.course-reader {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: #fafaf9;
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', sans-serif;
+}
+
+/* ============================================
+   HEADER
+   ============================================ */
+
+.reader-header {
+  background: white;
+  border-bottom: 1px solid #e7e5e4;
+  padding: 1rem 2rem;
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  flex-shrink: 0;
+}
+
+.reader-header-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.reader-header-info h1 {
+  font-size: 1.25rem;
+  font-weight: 700;
+  margin: 0 0 0.25rem 0;
+  color: #1c1917;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.reader-meta {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+  font-size: 0.875rem;
+  color: #78716c;
+  flex-wrap: wrap;
+}
+
+.progress-text {
+  color: #059669;
+  font-weight: 600;
+}
+
+.reader-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.btn-icon {
+  padding: 0.5rem;
+  background: transparent;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  color: #57534e;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.btn-icon:hover {
+  background: #f5f5f4;
+  color: #1c1917;
+}
+
+.btn-icon:active {
+  transform: scale(0.95);
+}
+
+/* ============================================
+   PROGRESS BAR
+   ============================================ */
+
+.reader-progress-bar {
+  height: 4px;
+  background: #e7e5e4;
+  flex-shrink: 0;
+}
+
+.reader-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #059669 0%, #10b981 100%);
+  transition: width 0.3s ease;
+}
+
+/* ============================================
+   CONTAINER
+   ============================================ */
+
+.reader-container {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+}
+
+/* ============================================
+   SIDEBAR
+   ============================================ */
+
+.reader-sidebar {
+  width: 320px;
+  background: white;
+  border-right: 1px solid #e7e5e4;
+  overflow-y: auto;
+  transition: transform 0.3s ease, width 0.3s ease;
+  position: relative;
+  flex-shrink: 0;
+}
+
+.reader-sidebar.closed {
+  transform: translateX(-100%);
+  width: 0;
+  overflow: hidden;
+}
+
+.sidebar-toggle {
+  position: absolute;
+  right: -40px;
+  top: 20px;
+  background: white;
+  border: 1px solid #e7e5e4;
+  border-radius: 0 8px 8px 0;
+  padding: 0.5rem 0.75rem;
+  cursor: pointer;
+  z-index: 10;
+  transition: all 0.2s;
+  color: #57534e;
+  font-weight: 700;
+}
+
+.sidebar-toggle:hover {
+  background: #f5f5f4;
+}
+
+.sidebar-content {
+  padding: 2rem;
+}
+
+.sidebar-content h3 {
+  font-size: 1.125rem;
+  font-weight: 700;
+  margin: 0 0 1.5rem 0;
+  color: #1c1917;
+}
+
+.sidebar-content h4 {
+  font-size: 0.875rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: #78716c;
+  margin: 0 0 1rem 0;
+  letter-spacing: 0.05em;
+}
+
+/* ============================================
+   MODULES NAVIGATION
+   ============================================ */
+
+.modules-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-bottom: 2rem;
+}
+
+.module-nav-item {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem;
+  background: #fafaf9;
+  border: 2px solid transparent;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+  text-align: left;
+  width: 100%;
+}
+
+.module-nav-item:hover {
+  background: #f5f5f4;
+  transform: translateX(4px);
+}
+
+.module-nav-item.active {
+  background: rgba(5, 150, 105, 0.1);
+  border-color: #059669;
+}
+
+.module-nav-item.completed {
+  opacity: 0.7;
+}
+
+.module-nav-item.completed .module-nav-icon {
+  color: #059669;
+}
+
+.module-nav-icon {
+  flex-shrink: 0;
+  color: #a8a29e;
+}
+
+.module-nav-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.module-nav-number {
+  font-size: 0.75rem;
+  color: #78716c;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.module-nav-title {
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: #1c1917;
+  margin-top: 0.125rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ============================================
+   SIDEBAR SECTIONS
+   ============================================ */
+
+.sidebar-section {
+  margin-top: 2rem;
+  padding-top: 2rem;
+  border-top: 1px solid #e7e5e4;
+}
+
+.objectives-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.objectives-list li {
+  display: flex;
+  align-items: start;
+  gap: 0.5rem;
+  font-size: 0.875rem;
+  color: #57534e;
+  line-height: 1.5;
+}
+
+.objectives-list li svg {
+  flex-shrink: 0;
+  margin-top: 0.25rem;
+  color: #059669;
+}
+
+/* ============================================
+   MAIN CONTENT
+   ============================================ */
+
+.reader-main {
+  flex: 1;
+  overflow-y: auto;
+  padding: 3rem;
+  max-width: 900px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+.reader-main::-webkit-scrollbar {
+  width: 8px;
+}
+
+.reader-main::-webkit-scrollbar-track {
+  background: #f5f5f4;
+}
+
+.reader-main::-webkit-scrollbar-thumb {
+  background: #a8a29e;
+  border-radius: 4px;
+}
+
+.reader-main::-webkit-scrollbar-thumb:hover {
+  background: #78716c;
+}
+
+/* ============================================
+   MODULE HEADER
+   ============================================ */
+
+.module-header {
+  margin-bottom: 3rem;
+}
+
+.module-number {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #059669;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 1rem;
+}
+
+.module-title {
+  font-size: 2.5rem;
+  font-weight: 800;
+  line-height: 1.2;
+  margin: 0 0 1.5rem 0;
+  color: #1c1917;
+}
+
+.module-meta {
+  display: flex;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+}
+
+.module-duration {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: #78716c;
+  font-size: 0.9375rem;
+}
+
+/* ============================================
+   MODULE CONTENT
+   ============================================ */
+
+.module-content {
+  line-height: 1.8;
+  color: #292524;
+}
+
+.module-section {
+  margin-bottom: 3rem;
+}
+
+.module-section:last-child {
+  margin-bottom: 0;
+}
+
+.module-section h3 {
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin: 0 0 1.5rem 0;
+  color: #1c1917;
+}
+
+.module-description {
+  font-size: 1.125rem;
+  color: #57534e;
+  line-height: 1.8;
+  margin: 0;
+}
+
+.description-section {
+  padding: 2rem;
+  background: rgba(5, 150, 105, 0.05);
+  border-left: 4px solid #059669;
+  border-radius: 8px;
+  margin-bottom: 3rem;
+}
+
+/* ============================================
+   TOPICS GRID
+   ============================================ */
+
+.topics-grid {
+  display: grid;
+  gap: 1rem;
+}
+
+.topic-card {
+  display: flex;
+  gap: 1rem;
+  padding: 1.5rem;
+  background: white;
+  border: 1px solid #e7e5e4;
+  border-radius: 12px;
+  transition: all 0.2s;
+}
+
+.topic-card:hover {
+  border-color: #059669;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+.topic-number {
+  width: 32px;
+  height: 32px;
+  background: linear-gradient(135deg, #059669 0%, #10b981 100%);
+  color: white;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  flex-shrink: 0;
+  font-size: 0.875rem;
+}
+
+.topic-text {
+  flex: 1;
+  font-weight: 500;
+  color: #1c1917;
+}
+
+/* ============================================
+   CONTENT TEXT
+   ============================================ */
+
+.content-text {
+  font-size: 1.0625rem;
+  line-height: 1.8;
+  color: #292524;
+}
+
+.content-text p {
+  margin: 0 0 1.5rem 0;
+}
+
+.content-text p:last-child {
+  margin-bottom: 0;
+}
+
+.content-section {
+  margin-bottom: 2rem;
+}
+
+.content-section h4 {
+  font-size: 1.25rem;
+  font-weight: 700;
+  margin: 0 0 1rem 0;
+  color: #1c1917;
+}
+
+/* ============================================
+   EXAMPLES
+   ============================================ */
+
+.example-card {
+  margin-bottom: 1.5rem;
+  background: #fafaf9;
+  border: 1px solid #e7e5e4;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.example-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 1rem 1.5rem;
+  background: white;
+  border-bottom: 1px solid #e7e5e4;
+  font-weight: 600;
+  color: #059669;
+  font-size: 0.9375rem;
+}
+
+.example-content {
+  padding: 1.5rem;
+  font-family: 'Courier New', 'Consolas', monospace;
+  font-size: 0.9375rem;
+  white-space: pre-wrap;
+  line-height: 1.6;
+  color: #292524;
+}
+
+/* ============================================
+   EXERCISES
+   ============================================ */
+
+.exercises-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.exercise-item {
+  padding: 1.5rem;
+  background: white;
+  border: 2px solid #e7e5e4;
+  border-radius: 12px;
+  transition: all 0.2s;
+}
+
+.exercise-item:hover {
+  border-color: #059669;
+}
+
+.exercise-number {
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: #059669;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 0.5rem;
+}
+
+.exercise-text {
+  font-size: 1rem;
+  line-height: 1.6;
+  color: #292524;
+}
+
+/* ============================================
+   RESOURCES
+   ============================================ */
+
+.resources-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.resources-list li {
+  padding: 1rem 1.5rem;
+  margin-bottom: 0.5rem;
+  background: white;
+  border: 1px solid #e7e5e4;
+  border-radius: 8px;
+  transition: all 0.2s;
+}
+
+.resources-list li:hover {
+  border-color: #059669;
+  background: rgba(5, 150, 105, 0.02);
+}
+
+.resources-list a {
+  color: #059669;
+  text-decoration: none;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.resources-list a:hover {
+  text-decoration: underline;
+}
+
+/* ============================================
+   MODULE FOOTER
+   ============================================ */
+
+.module-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  margin-top: 4rem;
+  padding-top: 2rem;
+  border-top: 1px solid #e7e5e4;
+}
+
+/* ============================================
+   BUTTONS
+   ============================================ */
+
+.btn-primary,
+.btn-secondary,
+.btn-success {
+  padding: 1rem 2rem;
+  border: none;
+  border-radius: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  transition: all 0.2s;
+  font-size: 1rem;
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, #059669 0%, #10b981 100%);
+  color: white;
+}
+
+.btn-primary:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(5, 150, 105, 0.3);
+}
+
+.btn-secondary {
+  background: white;
+  color: #57534e;
+  border: 1px solid #e7e5e4;
+}
+
+.btn-secondary:hover:not(:disabled) {
+  background: #fafaf9;
+  border-color: #d6d3d1;
+}
+
+.btn-success {
+  background: linear-gradient(135deg, #16a34a 0%, #22c55e 100%);
+  color: white;
+}
+
+.btn-success:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(22, 163, 74, 0.3);
+}
+
+.btn-primary:disabled,
+.btn-secondary:disabled,
+.btn-success:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none !important;
+}
+
+.btn-primary:active:not(:disabled),
+.btn-secondary:active:not(:disabled),
+.btn-success:active:not(:disabled) {
+  transform: translateY(0) !important;
+}
+
+/* ============================================
+   RESPONSIVE
+   ============================================ */
+
+@media (max-width: 1024px) {
+  .reader-main {
+    padding: 2rem;
+  }
+}
+
+@media (max-width: 768px) {
+  .reader-header {
+    padding: 1rem;
+  }
+
+  .reader-header-info h1 {
+    font-size: 1.125rem;
+  }
+
+  .reader-sidebar {
+    position: absolute;
+    height: 100%;
+    z-index: 10;
+    box-shadow: 2px 0 8px rgba(0, 0, 0, 0.1);
+  }
+
+  .reader-main {
+    padding: 1.5rem;
+  }
+
+  .module-title {
+    font-size: 1.75rem;
+  }
+
+  .module-footer {
+    flex-direction: column;
+  }
+
+  .btn-primary,
+  .btn-secondary,
+  .btn-success {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .topics-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 480px) {
+  .reader-header {
+    gap: 0.75rem;
+  }
+
+  .reader-actions {
+    display: none;
+  }
+
+  .reader-main {
+    padding: 1rem;
+  }
+
+  .module-title {
+    font-size: 1.5rem;
+  }
+
+  .module-section h3 {
+    font-size: 1.25rem;
+  }
+
+  .content-text {
+    font-size: 1rem;
+  }
+}
+
+/* ============================================
+   PRINT STYLES
+   ============================================ */
+
+@media print {
+  .reader-header,
+  .reader-progress-bar,
+  .reader-sidebar,
+  .module-footer {
+    display: none;
+  }
+
+  .reader-main {
+    max-width: 100%;
+    padding: 0;
+  }
+
+  .course-reader {
+    position: static;
+    background: white;
+  }
+}
+
+/* ============================================
+   ANIMATIONS
+   ============================================ */
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.course-reader {
+  animation: fadeIn 0.3s ease-in;
+}
+
+/* ============================================
+   DARK MODE (Optionnel)
+   ============================================ */
+
+@media (prefers-color-scheme: dark) {
+  /* Décommentez pour activer le dark mode */
+  /*
+  .course-reader {
+    background: #1c1917;
+    color: #e7e5e4;
+  }
+
+  .reader-header {
+    background: #292524;
+    border-color: #44403c;
+  }
+
+  .reader-sidebar {
+    background: #292524;
+    border-color: #44403c;
+  }
+
+  .module-nav-item {
+    background: #1c1917;
+  }
+
+  .topic-card,
+  .exercise-item,
+  .example-card,
+  .resources-list li {
+    background: #292524;
+    border-color: #44403c;
+  }
+  */
+}
