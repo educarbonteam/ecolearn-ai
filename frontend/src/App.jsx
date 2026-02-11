@@ -158,13 +158,7 @@ const App = () => {
       <nav className="navbar">
         <div className="nav-container">
           <div className="nav-logo">
-            <div className="logo-icon">
-              <Leaf size={28} strokeWidth={2.5} />
-            </div>
-            <div className="logo-text">
-              <span className="logo-name">EcoLearn</span>
-              <span className="logo-ai">AI</span>
-            </div>
+            <img src="/mylogo.png" alt="Logo" className="nav-logo-image" />
           </div>
           
           {isAuthenticated && (
@@ -400,7 +394,9 @@ const App = () => {
           display: flex;
           align-items: center;
           justify-content: space-between;
-          height: 72px;
+          height: auto;
+          min-height: 80px;
+          padding: 0.5rem 2rem;
         }
 
         .nav-logo {
@@ -409,38 +405,11 @@ const App = () => {
           gap: 0.75rem;
         }
 
-        .logo-icon {
-          width: 42px;
-          height: 42px;
-          background: var(--gradient-eco);
-          border-radius: 12px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          color: white;
-          box-shadow: 0 4px 12px rgba(5, 150, 105, 0.3);
-        }
-
-        .logo-text {
-          display: flex;
-          align-items: baseline;
-          gap: 0.25rem;
-        }
-
-        .logo-name {
-          font-size: 1.5rem;
-          font-weight: 700;
-          color: var(--text-primary);
-          letter-spacing: -0.02em;
-        }
-
-        .logo-ai {
-          font-size: 1.5rem;
-          font-weight: 700;
-          background: var(--gradient-eco);
-          -webkit-background-clip: text;
-          -webkit-text-fill-color: transparent;
-          background-clip: text;
+        .nav-logo-image {
+          height: 140px;
+          width: auto;
+          object-fit: contain;
+          max-width: 400px;
         }
 
         .nav-links {
@@ -2131,6 +2100,13 @@ const App = () => {
           margin-bottom: 1.5rem;
         }
 
+        .modal-logo-image {
+          height: 200px;
+          width: auto;
+          object-fit: contain;
+          max-width: 600px;
+        }
+
         .modal-title {
           font-size: 1.75rem;
           font-weight: 800;
@@ -2851,13 +2827,7 @@ const AuthModal = ({ mode, onClose, onSuccess, onSwitchMode }) => {
 
         <div className="modal-header">
           <div className="modal-logo">
-            <div className="logo-icon">
-              <Leaf size={24} strokeWidth={2.5} />
-            </div>
-            <div className="logo-text">
-              <span className="logo-name">EcoLearn</span>
-              <span className="logo-ai">AI</span>
-            </div>
+            <img src="/mylogo.png" alt="Logo" className="modal-logo-image" />
           </div>
           <h2 className="modal-title">
             {mode === 'login' ? 'Bienvenue !' : 'Créer un compte'}
