@@ -60,6 +60,9 @@ jobs:
           DATABASE_URL: "sqlite:///./test.db"
         run: |
           cd backend
+          # FIX 7: fichiers CRLF (commites depuis Windows) -> Black normalise en LF.
+          # On auto-formate d abord, puis on verifie qu il n y a plus rien a changer.
+          black .
           black --check .
 
       - name: Flake8

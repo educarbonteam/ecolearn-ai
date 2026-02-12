@@ -31,7 +31,7 @@ class UserResponse(UserBase):
     trees_planted: int
     streak: int
     created_at: datetime
-    
+
     class Config:
         from_attributes = True
 
@@ -60,7 +60,7 @@ class CourseResponse(CourseBase):
     rating: float
     ai_generated: bool
     created_at: datetime
-    
+
     class Config:
         from_attributes = True
 
@@ -77,7 +77,7 @@ class EnrollmentResponse(BaseModel):
     completed: bool
     started_at: datetime
     last_accessed: Optional[datetime]
-    
+
     class Config:
         from_attributes = True
 
@@ -109,7 +109,7 @@ class CarbonMetricResponse(BaseModel):
     trees_planted: int
     learning_hours: float
     created_at: datetime
-    
+
     class Config:
         from_attributes = True
 
@@ -119,8 +119,8 @@ class CarbonCalculationRequest(BaseModel):
     course_category: str
 
 
+# FIX: carbon_service.py retourne 'carbon_offset_kg', pas 'carbon_offset'
 class CarbonCalculationResponse(BaseModel):
-    # FIX: carbon_service.py retourne 'carbon_offset_kg', pas 'carbon_offset'
     carbon_offset_kg: float
     trees_equivalent: int
     calculation_method: str
@@ -143,7 +143,7 @@ class TreePlantationResponse(BaseModel):
     status: str
     carbon_equivalent: float
     planted_at: datetime
-    
+
     class Config:
         from_attributes = True
 
@@ -157,7 +157,7 @@ class AchievementResponse(BaseModel):
     points: int
     unlocked: bool
     unlocked_at: Optional[datetime]
-    
+
     class Config:
         from_attributes = True
 
