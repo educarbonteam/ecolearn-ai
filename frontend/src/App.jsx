@@ -3,18 +3,6 @@ import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContai
 import { Camera, BookOpen, Leaf, TrendingUp, Award, Clock, Target, Zap, TreePine, Users, Brain, ChevronRight, Play, Check, BarChart3, Sparkles, Send, Loader, Plus, X, Mail, Lock, User, Edit, Settings, Shield, Bell } from 'lucide-react';
 import { authService } from './services/ecolearn';
 
-// Données fictives
-const FAKE_USER = {
-  name: "Sophie Martin",
-  email: "sophie.martin@example.com",
-  avatar: "SM",
-  totalLearningHours: 47.5,
-  coursesCompleted: 12,
-  carbonOffset: 142.8,
-  treesPlanted: 28,
-  streak: 15,
-  level: "Éco-Apprenant Expert"
-};
 
 const FAKE_COURSES = [
   {
@@ -132,29 +120,80 @@ const RECOMMENDED_COURSES = [
 const App = () => {
   const [activeView, setActiveView] = useState('dashboard');
   const [mounted, setMounted] = useState(false);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [authMode, setAuthMode] = useState('login'); // 'login' or 'signup'
   const [showProfileMenu, setShowProfileMenu] = useState(false);
+  const [user, setUser] = useState(null);
+  const isAuthenticated = !!user;
+  const [bootLoading, setBootLoading] = useState(true);
 
-  //console.log(`🌐 Base URL: ${API_BASE_URL}`);
+useEffect(() => {
+  let cancelled = false;
 
-  useEffect(() => {
-    setMounted(true);
-    // Vérifier si l'utilisateur est connecté (simulation)
-    const savedAuth = localStorage.getItem('ecolearn_auth');
-    if (savedAuth) {
-      setIsAuthenticated(true);
+  (async () => {
+    try {
+      setMounted(true);
+
+      const token = localStorage.getItem("access_token");
+      if (!token) {
+        if (!cancelled) setUser(null);
+        return;
+      }
+
+      const me = await authService.getCurrentUser(); // appelle /me avec Bearer token
+      if (!cancelled) setUser(me);
+    } catch (e) {
+      localStorage.removeItem("access_token");
+      if (!cancelled) setUser(null);
+    } finally {
+      if (!cancelled) setBootLoading(false);
     }
-  }, []);
+  })();
+
+  return () => {
+    cancelled = true;
+  };
+}, []);
 
   const handleLogout = () => {
-    localStorage.removeItem('ecolearn_auth');
-    setIsAuthenticated(false);
+    localStorage.removeItem("access_token");
     setShowProfileMenu(false);
     setActiveView('dashboard');
+    setUser(null);
   };
 
+  if (bootLoading) {
+    return <Loader label="Initialisation EcoLearn…" />;
+  }
+
+  const handleAuthSuccess = async () => {
+  try {
+    // 1) Récupérer le user connecté
+    const me = await authService.getCurrentUser();
+
+    // 2) Mettre à jour l’état global
+    setUser(me);
+
+    // 3) Persistance simple (ton flag actuel)
+    localStorage.setItem("ecolearn_auth", "true");
+
+    // 4) Fermer la modal
+    setShowAuthModal(false);
+
+    // Optionnel: nettoyer le menu profil / view
+    setShowProfileMenu(false);
+    setActiveView("dashboard");
+  } catch (err) {
+    // Si /me échoue => token invalide ou absent => on nettoie tout
+    localStorage.removeItem("access_token");
+    localStorage.removeItem("ecolearn_auth");
+    setUser(null);
+    // Tu peux garder la modal ouverte pour que l’utilisateur réessaie
+    // ou la fermer. Moi je la laisse ouverte.
+    throw err; // important: permet à AuthModal d’afficher l’erreur si besoin
+  }
+};
+  
   return (
     <div className="app">
       {/* Navigation */}
@@ -210,8 +249,8 @@ const App = () => {
                   className="user-avatar-button"
                   onClick={() => setShowProfileMenu(!showProfileMenu)}
                 >
-                  <div className="user-avatar">{FAKE_USER.avatar}</div>
-                  <span className="user-name">{FAKE_USER.name}</span>
+                  <div className="user-avatar">{user?.avatar}</div>
+                  <span className="user-name">{user?.name}</span>
                 </div>
                 
                 {showProfileMenu && (
@@ -320,11 +359,7 @@ const App = () => {
         <AuthModal 
           mode={authMode}
           onClose={() => setShowAuthModal(false)}
-          onSuccess={() => {
-            setIsAuthenticated(true);
-            setShowAuthModal(false);
-            localStorage.setItem('ecolearn_auth', 'true');
-          }}
+          onSuccess={handleAuthSuccess}
           onSwitchMode={() => setAuthMode(authMode === 'login' ? 'signup' : 'login')}
         />
       )}
@@ -338,11 +373,11 @@ const App = () => {
           }} />
         ) : (
           <>
-            {activeView === 'dashboard' && <DashboardView />}
+            {activeView === 'dashboard' && <DashboardView  user={user}/>}
             {activeView === 'generate' && <GenerateCourseView />}
             {activeView === 'courses' && <CoursesView />}
             {activeView === 'impact' && <ImpactView />}
-            {activeView === 'profile' && <ProfileView user={FAKE_USER} />}
+            {activeView === 'profile' && <ProfileView user={user} />}
           </>
         )}
       </main>
@@ -2819,70 +2854,69 @@ const AuthModal = ({ mode, onClose, onSuccess, onSwitchMode }) => {
   const [apiError, setApiError] = useState("");
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
-    const newErrors = {};
+  e.preventDefault();
+  setApiError("");
+  const newErrors = {};
 
-    // ------- Validation frontend (inchangée) -------
-    if (mode === 'signup') {
-      if (!formData.name) newErrors.name = 'Le nom est requis';
-      if (!formData.email) newErrors.email = "L'email est requis";
-      if (!formData.password) newErrors.password = 'Le mot de passe est requis';
-      if (formData.password && formData.password.length < 6) newErrors.password = 'Minimum 6 caractères';
-      if (formData.password !== formData.confirmPassword) {
-        newErrors.confirmPassword = 'Les mots de passe ne correspondent pas';
-      }
+  // ------- Validation frontend -------
+  if (mode === "signup") {
+    if (!formData.name) newErrors.name = "Le nom est requis";
+    if (!formData.email) newErrors.email = "L'email est requis";
+    if (!formData.password) newErrors.password = "Le mot de passe est requis";
+    if (formData.password && formData.password.length < 6)
+      newErrors.password = "Minimum 6 caractères";
+    if (formData.password !== formData.confirmPassword)
+      newErrors.confirmPassword = "Les mots de passe ne correspondent pas";
+  } else {
+    if (!formData.email) newErrors.email = "L'email est requis";
+    if (!formData.password) newErrors.password = "Le mot de passe est requis";
+  }
+
+  setErrors(newErrors);
+  if (Object.keys(newErrors).length) return;
+
+  setIsLoading(true);
+
+  try {
+    if (mode === "login") {
+      await authService.login(formData.email, formData.password);
+      await onSuccess();
+      return;
+    }
+
+    // ===== Signup =====
+    const res = await authService.register({
+      name: formData.name,
+      email: formData.email,
+      password: formData.password,
+    });
+
+    // Cas A: si register renvoie déjà access_token, ok
+    if (res?.access_token) {
+      localStorage.setItem("access_token", res.access_token);
+      await onSuccess();
+      return;
+    }
+
+    // Cas B: sinon, auto-login après signup
+    await authService.login(formData.email, formData.password);
+    await onSuccess();
+  } catch (err) {
+    const detail =
+      err?.response?.data?.detail ||
+      err?.response?.data?.message ||
+      "Erreur. Vérifie tes identifiants.";
+
+    if (typeof detail === "string" && detail.toLowerCase().includes("email")) {
+      setErrors((prev) => ({ ...prev, email: detail }));
     } else {
-      if (!formData.email) newErrors.email = "L'email est requis";
-      if (!formData.password) newErrors.password = 'Le mot de passe est requis';
+      setApiError(detail);
     }
+  } finally {
+    setIsLoading(false);
+  }
+};
 
-    setErrors(newErrors);
-    if (Object.keys(newErrors).length !== 0) return;
-     setIsLoading(true);
-
-      try {
-      if (mode === "login") {
-        console.log("Tentative de connexion avec :", formData.email, formData.password);
-        await authService.login(formData.email, formData.password);
-      } else {
-        if(mode === "signup") {
-        await authService.register({
-          name: formData.name,
-          email: formData.email,
-          password: formData.password,
-        });
-        }
-      }
-
-      onSuccess(); // ex: fermer modal + refresh user state
-    } catch (err) {
-      // Gestion erreurs API (FastAPI renvoie souvent detail)
-      const detail =
-        err?.response?.data?.detail ||
-        err?.response?.data?.message ||
-        "Erreur de connexion. Vérifie tes identifiants.";
-
-      // Ex: mapper une erreur email déjà utilisé vers le champ email
-      if (
-        typeof detail === "string" &&
-        detail.toLowerCase().includes("email")
-      ) {
-        setErrors((prev) => ({ ...prev, email: detail }));
-      } else {
-        setApiError(detail);
-      }
-    } finally {
-      setIsLoading(false);
-    }
-
-    // if (Object.keys(newErrors).length === 0) {
-    //   setIsLoading(true);
-        
-    //   setTimeout(() => {
-    //     onSuccess();
-    //   }, 1500);
-    // }
-  };
 
   return (
     <div className="modal-overlay" onClick={onClose}>
@@ -2989,16 +3023,16 @@ const AuthModal = ({ mode, onClose, onSuccess, onSwitchMode }) => {
 
           <button type="submit" className="btn-primary btn-full" disabled={isLoading}>
             {isLoading ? (
-              <>
-                <Loader size={20} className="spinner" />
-                Connexion en cours...
-              </>
-            ) : (
-              <>
-                {mode === 'login' ? 'Se connecter' : 'Créer mon compte'}
-                <ChevronRight size={20} />
-              </>
-            )}
+            <>
+              <Loader size={20} className="spinner" />
+              {mode === "login" ? "Connexion en cours..." : "Création du compte..."}
+            </>
+          ) : (
+            <>
+              {mode === "login" ? "Se connecter" : "Créer mon compte"}
+              <ChevronRight size={20} />
+            </>
+          )}
           </button>
 
           <div className="auth-divider">
@@ -3843,12 +3877,12 @@ const normalizePrereq = (p) => String(p).trim();
 };
 
 // Dashboard Component
-const DashboardView = () => {
+const DashboardView = ({ user }) => {
   return (
     <div className="dashboard-grid">
       <div className="welcome-section">
         <div className="welcome-content">
-          <h2 className="welcome-greeting">Bonjour, {FAKE_USER.name}! 👋</h2>
+          <h2 className="welcome-greeting">Bonjour, {user.name}! 👋</h2>
           <p className="welcome-subtitle">Voici votre impact d'apprentissage aujourd'hui</p>
           
           <div className="welcome-stats">
@@ -3857,7 +3891,7 @@ const DashboardView = () => {
                 <Clock size={24} />
               </div>
               <div className="welcome-stat-info">
-                <h3>{FAKE_USER.totalLearningHours}h</h3>
+                <h3>{user.total_learning_hours}h</h3>
                 <p>Temps d'apprentissage</p>
               </div>
             </div>
@@ -3866,7 +3900,7 @@ const DashboardView = () => {
                 <TreePine size={24} />
               </div>
               <div className="welcome-stat-info">
-                <h3>{FAKE_USER.treesPlanted}</h3>
+                <h3>{user.trees_planted}</h3>
                 <p>Arbres plantés</p>
               </div>
             </div>
@@ -3875,7 +3909,7 @@ const DashboardView = () => {
                 <Target size={24} />
               </div>
               <div className="welcome-stat-info">
-                <h3>{FAKE_USER.streak} jours</h3>
+                <h3>{user.streak} jours</h3>
                 <p>Série active</p>
               </div>
             </div>
@@ -3891,7 +3925,7 @@ const DashboardView = () => {
               <BookOpen size={20} />
             </div>
           </div>
-          <div className="metric-value">{FAKE_USER.coursesCompleted}</div>
+          <div className="metric-value">{user.courses_completed}</div>
           <div className="metric-label">Sur 340+ disponibles</div>
           <div className="metric-trend">
             <TrendingUp size={16} />
@@ -3906,7 +3940,7 @@ const DashboardView = () => {
               <Leaf size={20} />
             </div>
           </div>
-          <div className="metric-value">{FAKE_USER.carbonOffset} kg</div>
+          <div className="metric-value">{user.carbonOffset} kg</div>
           <div className="metric-label">Équivalent carbone</div>
           <div className="metric-trend">
             <TrendingUp size={16} />
@@ -3921,8 +3955,8 @@ const DashboardView = () => {
               <Award size={20} />
             </div>
           </div>
-          <div className="metric-value" style={{ fontSize: '1.5rem' }}>Expert</div>
-          <div className="metric-label">{FAKE_USER.level}</div>
+          <div className="metric-value" style={{ fontSize: '1.5rem' }}>{user.level}</div>
+          <div className="metric-label">{user.level}</div>
           <div className="metric-trend">
             <TrendingUp size={16} />
             78% vers Maître
@@ -3936,7 +3970,7 @@ const DashboardView = () => {
           <p className="chart-subtitle">Heures d'apprentissage par jour</p>
         </div>
         <ResponsiveContainer width="100%" height={300}>
-          <BarChart data={LEARNING_STATS}>
+          <BarChart data={user.learningStats}>
             <CartesianGrid strokeDasharray="3 3" stroke="#e7e5e4" />
             <XAxis dataKey="day" stroke="#a8a29e" />
             <YAxis stroke="#a8a29e" />
