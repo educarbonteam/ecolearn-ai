@@ -49,12 +49,15 @@ jobs:
           pip install -r backend/requirements.txt
 
       # ✅ FIX 3 : OPENAI_API_KEY + SECRET_KEY requis dès l'import de config.py
-      #            Ces variables doivent être présentes sur TOUTES les étapes qui
-      #            importent (même indirectement) le backend.
+      # ✅ FIX 5 : DATABASE_URL requis sur toutes les étapes qui importent le backend.
+      #            database.py crée l'engine PostgreSQL au niveau du module (top-level),
+      #            donc dès le premier import Python tente de résoudre host "db" → crash.
+      #            On redirige vers SQLite in-memory pour tout le CI.
       - name: Black (check)
         env:
           OPENAI_API_KEY: "dummy-ci-key"
           SECRET_KEY: "dummy-ci-secret"
+          DATABASE_URL: "sqlite:///./test.db"
         run: |
           cd backend
           black --check .
@@ -63,6 +66,7 @@ jobs:
         env:
           OPENAI_API_KEY: "dummy-ci-key"
           SECRET_KEY: "dummy-ci-secret"
+          DATABASE_URL: "sqlite:///./test.db"
         run: |
           cd backend
           flake8 . || true
@@ -71,6 +75,7 @@ jobs:
         env:
           OPENAI_API_KEY: "dummy-ci-key"
           SECRET_KEY: "dummy-ci-secret"
+          DATABASE_URL: "sqlite:///./test.db"
         run: |
           cd backend
           mypy . --ignore-missing-imports || true
@@ -79,6 +84,8 @@ jobs:
         env:
           OPENAI_API_KEY: "dummy-ci-key"
           SECRET_KEY: "dummy-ci-secret"
+          # SQLite in-memory : pas de serveur PostgreSQL requis en CI
+          DATABASE_URL: "sqlite:///./test.db"
         run: |
           cd backend
           pytest -v --cov=. --cov-report=xml
@@ -259,7 +266,3 @@ jobs:
           service: ${{ env.ECS_SERVICE }}
           cluster: ${{ env.ECS_CLUSTER }}
           wait-for-service-stability: true
-
-
-
-
