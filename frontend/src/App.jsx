@@ -1,19 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, BarChart, Bar } from 'recharts';
 import { Camera, BookOpen, Leaf, TrendingUp, Award, Clock, Target, Zap, TreePine, Users, Brain, ChevronRight, Play, Check, BarChart3, Sparkles, Send, Loader, Plus, X, Mail, Lock, User, Edit, Settings, Shield, Bell } from 'lucide-react';
+import { authService } from './services/ecolearn';
 
-// Données fictives
-const FAKE_USER = {
-  name: "Sophie Martin",
-  email: "sophie.martin@example.com",
-  avatar: "SM",
-  totalLearningHours: 47.5,
-  coursesCompleted: 12,
-  carbonOffset: 142.8,
-  treesPlanted: 28,
-  streak: 15,
-  level: "Éco-Apprenant Expert"
-};
 
 const FAKE_COURSES = [
   {
@@ -131,27 +120,80 @@ const RECOMMENDED_COURSES = [
 const App = () => {
   const [activeView, setActiveView] = useState('dashboard');
   const [mounted, setMounted] = useState(false);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [authMode, setAuthMode] = useState('login'); // 'login' or 'signup'
   const [showProfileMenu, setShowProfileMenu] = useState(false);
+  const [user, setUser] = useState(null);
+  const isAuthenticated = !!user;
+  const [bootLoading, setBootLoading] = useState(true);
 
-  useEffect(() => {
-    setMounted(true);
-    // Vérifier si l'utilisateur est connecté (simulation)
-    const savedAuth = localStorage.getItem('ecolearn_auth');
-    if (savedAuth) {
-      setIsAuthenticated(true);
+useEffect(() => {
+  let cancelled = false;
+
+  (async () => {
+    try {
+      setMounted(true);
+
+      const token = localStorage.getItem("access_token");
+      if (!token) {
+        if (!cancelled) setUser(null);
+        return;
+      }
+
+      const me = await authService.getCurrentUser(); // appelle /me avec Bearer token
+      if (!cancelled) setUser(me);
+    } catch (e) {
+      localStorage.removeItem("access_token");
+      if (!cancelled) setUser(null);
+    } finally {
+      if (!cancelled) setBootLoading(false);
     }
-  }, []);
+  })();
+
+  return () => {
+    cancelled = true;
+  };
+}, []);
 
   const handleLogout = () => {
-    localStorage.removeItem('ecolearn_auth');
-    setIsAuthenticated(false);
+    localStorage.removeItem("access_token");
     setShowProfileMenu(false);
     setActiveView('dashboard');
+    setUser(null);
   };
 
+  if (bootLoading) {
+    return <Loader label="Initialisation EcoLearn…" />;
+  }
+
+  const handleAuthSuccess = async () => {
+  try {
+    // 1) Récupérer le user connecté
+    const me = await authService.getCurrentUser();
+
+    // 2) Mettre à jour l’état global
+    setUser(me);
+
+    // 3) Persistance simple (ton flag actuel)
+    localStorage.setItem("ecolearn_auth", "true");
+
+    // 4) Fermer la modal
+    setShowAuthModal(false);
+
+    // Optionnel: nettoyer le menu profil / view
+    setShowProfileMenu(false);
+    setActiveView("dashboard");
+  } catch (err) {
+    // Si /me échoue => token invalide ou absent => on nettoie tout
+    localStorage.removeItem("access_token");
+    localStorage.removeItem("ecolearn_auth");
+    setUser(null);
+    // Tu peux garder la modal ouverte pour que l’utilisateur réessaie
+    // ou la fermer. Moi je la laisse ouverte.
+    throw err; // important: permet à AuthModal d’afficher l’erreur si besoin
+  }
+};
+  
   return (
     <div className="app">
       {/* Navigation */}
@@ -201,8 +243,8 @@ const App = () => {
                   className="user-avatar-button"
                   onClick={() => setShowProfileMenu(!showProfileMenu)}
                 >
-                  <div className="user-avatar">{FAKE_USER.avatar}</div>
-                  <span className="user-name">{FAKE_USER.name}</span>
+                  <div className="user-avatar">{user?.avatar}</div>
+                  <span className="user-name">{user?.name}</span>
                 </div>
                 
                 {showProfileMenu && (
@@ -311,11 +353,7 @@ const App = () => {
         <AuthModal 
           mode={authMode}
           onClose={() => setShowAuthModal(false)}
-          onSuccess={() => {
-            setIsAuthenticated(true);
-            setShowAuthModal(false);
-            localStorage.setItem('ecolearn_auth', 'true');
-          }}
+          onSuccess={handleAuthSuccess}
           onSwitchMode={() => setAuthMode(authMode === 'login' ? 'signup' : 'login')}
         />
       )}
@@ -329,11 +367,11 @@ const App = () => {
           }} />
         ) : (
           <>
-            {activeView === 'dashboard' && <DashboardView />}
+            {activeView === 'dashboard' && <DashboardView  user={user}/>}
             {activeView === 'generate' && <GenerateCourseView />}
             {activeView === 'courses' && <CoursesView />}
             {activeView === 'impact' && <ImpactView />}
-            {activeView === 'profile' && <ProfileView user={FAKE_USER} />}
+            {activeView === 'profile' && <ProfileView user={user} />}
           </>
         )}
       </main>
@@ -2789,34 +2827,72 @@ const AuthModal = ({ mode, onClose, onSuccess, onSwitchMode }) => {
   });
   const [errors, setErrors] = useState({});
   const [isLoading, setIsLoading] = useState(false);
+  const [apiError, setApiError] = useState("");
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    const newErrors = {};
+  const handleSubmit = async (e) => {
+  e.preventDefault();
+  setApiError("");
+  const newErrors = {};
 
-    if (mode === 'signup') {
-      if (!formData.name) newErrors.name = 'Le nom est requis';
-      if (!formData.email) newErrors.email = 'L\'email est requis';
-      if (!formData.password) newErrors.password = 'Le mot de passe est requis';
-      if (formData.password.length < 6) newErrors.password = 'Minimum 6 caractères';
-      if (formData.password !== formData.confirmPassword) {
-        newErrors.confirmPassword = 'Les mots de passe ne correspondent pas';
-      }
+  // ------- Validation frontend -------
+  if (mode === "signup") {
+    if (!formData.name) newErrors.name = "Le nom est requis";
+    if (!formData.email) newErrors.email = "L'email est requis";
+    if (!formData.password) newErrors.password = "Le mot de passe est requis";
+    if (formData.password && formData.password.length < 6)
+      newErrors.password = "Minimum 6 caractères";
+    if (formData.password !== formData.confirmPassword)
+      newErrors.confirmPassword = "Les mots de passe ne correspondent pas";
+  } else {
+    if (!formData.email) newErrors.email = "L'email est requis";
+    if (!formData.password) newErrors.password = "Le mot de passe est requis";
+  }
+
+  setErrors(newErrors);
+  if (Object.keys(newErrors).length) return;
+
+  setIsLoading(true);
+
+  try {
+    if (mode === "login") {
+      await authService.login(formData.email, formData.password);
+      await onSuccess();
+      return;
+    }
+
+    // ===== Signup =====
+    const res = await authService.register({
+      name: formData.name,
+      email: formData.email,
+      password: formData.password,
+    });
+
+    // Cas A: si register renvoie déjà access_token, ok
+    if (res?.access_token) {
+      localStorage.setItem("access_token", res.access_token);
+      await onSuccess();
+      return;
+    }
+
+    // Cas B: sinon, auto-login après signup
+    await authService.login(formData.email, formData.password);
+    await onSuccess();
+  } catch (err) {
+    const detail =
+      err?.response?.data?.detail ||
+      err?.response?.data?.message ||
+      "Erreur. Vérifie tes identifiants.";
+
+    if (typeof detail === "string" && detail.toLowerCase().includes("email")) {
+      setErrors((prev) => ({ ...prev, email: detail }));
     } else {
-      if (!formData.email) newErrors.email = 'L\'email est requis';
-      if (!formData.password) newErrors.password = 'Le mot de passe est requis';
+      setApiError(detail);
     }
+  } finally {
+    setIsLoading(false);
+  }
+};
 
-    setErrors(newErrors);
-
-    if (Object.keys(newErrors).length === 0) {
-      setIsLoading(true);
-      // Simulation de connexion
-      setTimeout(() => {
-        onSuccess();
-      }, 1500);
-    }
-  };
 
   return (
     <div className="modal-overlay" onClick={onClose}>
@@ -2833,13 +2909,14 @@ const AuthModal = ({ mode, onClose, onSuccess, onSwitchMode }) => {
             {mode === 'login' ? 'Bienvenue !' : 'Créer un compte'}
           </h2>
           <p className="modal-subtitle">
-            {mode === 'login' 
-              ? 'Connectez-vous pour continuer votre apprentissage' 
-              : 'Rejoignez notre communauté d\'apprenants éco-responsables'}
+            {mode === 'login'
+              ? 'Connectez-vous pour continuer votre apprentissage'
+              : "Rejoignez notre communauté d'apprenants éco-responsables"}
           </p>
         </div>
 
         <form className="auth-form" onSubmit={handleSubmit}>
+           {apiError && <div className="form-error global">{apiError}</div>}
           {mode === 'signup' && (
             <div className="form-group">
               <label className="form-label">
@@ -2916,16 +2993,16 @@ const AuthModal = ({ mode, onClose, onSuccess, onSwitchMode }) => {
 
           <button type="submit" className="btn-primary btn-full" disabled={isLoading}>
             {isLoading ? (
-              <>
-                <Loader size={20} className="spinner" />
-                Connexion en cours...
-              </>
-            ) : (
-              <>
-                {mode === 'login' ? 'Se connecter' : 'Créer mon compte'}
-                <ChevronRight size={20} />
-              </>
-            )}
+            <>
+              <Loader size={20} className="spinner" />
+              {mode === "login" ? "Connexion en cours..." : "Création du compte..."}
+            </>
+          ) : (
+            <>
+              {mode === "login" ? "Se connecter" : "Créer mon compte"}
+              <ChevronRight size={20} />
+            </>
+          )}
           </button>
 
           <div className="auth-divider">
@@ -3316,56 +3393,54 @@ const GenerateCourseView = () => {
     'Machine Learning', 'SQL', 'Git', 'Docker', 'React', 'Node.js'
   ];
 
-  const handleGenerate = () => {
-    setIsGenerating(true);
-    
-    // Simulation de génération par IA
-    setTimeout(() => {
-      const course = {
-        title: `${formData.subject} pour ${formData.level}`,
-        description: `Cours personnalisé de ${formData.duration} généré par IA selon vos objectifs: ${formData.goals}`,
-        modules: [
-          {
-            id: 1,
-            title: 'Introduction et Fondamentaux',
-            duration: '45 min',
-            topics: ['Concepts de base', 'Terminologie', 'Contexte historique'],
-            carbonImpact: 1.2
-          },
-          {
-            id: 2,
-            title: 'Concepts Avancés',
-            duration: '1h 30min',
-            topics: ['Techniques principales', 'Best practices', 'Cas d\'usage'],
-            carbonImpact: 2.8
-          },
-          {
-            id: 3,
-            title: 'Mise en Pratique',
-            duration: '2h 15min',
-            topics: ['Projet guidé', 'Exercices pratiques', 'Études de cas'],
-            carbonImpact: 3.5
-          },
-          {
-            id: 4,
-            title: 'Projet Final et Certification',
-            duration: '1h 30min',
-            topics: ['Projet capstone', 'Évaluation', 'Certification'],
-            carbonImpact: 2.1
-          }
-        ],
-        totalDuration: '6h 00min',
-        estimatedCarbon: 9.6,
-        treesToPlant: 2,
-        difficulty: formData.level,
-        learningStyle: formData.learningStyle
-      };
-      
-      setGeneratedCourse(course);
-      setIsGenerating(false);
-      setStep(5);
-    }, 3000);
-  };
+  const SUBJECT_ID_BY_NAME = Object.fromEntries(subjects.map(s => [s.name, s.id]));
+  const LEVEL_ID_BY_NAME = Object.fromEntries(levels.map(l => [l.name, l.id]));
+  const DURATION_ID_BY_NAME = Object.fromEntries(durations.map(d => [d.name, d.id]));
+  const STYLE_ID_BY_NAME = Object.fromEntries(learningStyles.map(s => [s.name, s.id]));
+
+// Normalise un peu (utile si backend est strict)
+const normalizePrereq = (p) => String(p).trim();
+
+  const handleGenerate = async () => {
+  setIsGenerating(true);
+
+  try {
+    // ✅ Construire un payload "backend-friendly"
+    const payload = {
+      subject_id: SUBJECT_ID_BY_NAME[formData.subject] ?? formData.subject,     // ex: "ai"
+      level: LEVEL_ID_BY_NAME[formData.level] ?? formData.level,               // ex: "beginner"
+      duration: DURATION_ID_BY_NAME[formData.duration] ?? formData.duration,   // ex: "short"
+      goals: formData.goals,
+      learning_style: STYLE_ID_BY_NAME[formData.learningStyle] ?? formData.learningStyle, // ex: "visual"
+      prerequisites: selectedPrerequisites.map(normalizePrereq),               // ex: ["Python","Git"]
+    };
+
+    // ⚠️ URL: adapte si ton backend est sur /api ou autre
+    const res = await fetch(`${VITE_API_PREFIX}/courses/generate`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+
+    if (!res.ok) {
+      const txt = await res.text();
+      throw new Error(`Backend error ${res.status}: ${txt}`);
+    }
+
+    const course = await res.json();
+
+    // ✅ Le backend doit renvoyer un objet "course".
+    // Si sa forme diffère, tu adaptes ici (mapping).
+    setGeneratedCourse(course);
+    setStep(5);
+  } catch (err) {
+    console.error(err);
+    // Sans changer le style, on peut au moins faire un alert simple
+    alert("Erreur lors de la génération du cours. Vérifie le backend et le payload.");
+  } finally {
+    setIsGenerating(false);
+  }
+};
 
   const togglePrerequisite = (prereq) => {
     if (selectedPrerequisites.includes(prereq)) {
@@ -3772,12 +3847,12 @@ const GenerateCourseView = () => {
 };
 
 // Dashboard Component
-const DashboardView = () => {
+const DashboardView = ({ user }) => {
   return (
     <div className="dashboard-grid">
       <div className="welcome-section">
         <div className="welcome-content">
-          <h2 className="welcome-greeting">Bonjour, {FAKE_USER.name}! 👋</h2>
+          <h2 className="welcome-greeting">Bonjour, {user.name}! 👋</h2>
           <p className="welcome-subtitle">Voici votre impact d'apprentissage aujourd'hui</p>
           
           <div className="welcome-stats">
@@ -3786,7 +3861,7 @@ const DashboardView = () => {
                 <Clock size={24} />
               </div>
               <div className="welcome-stat-info">
-                <h3>{FAKE_USER.totalLearningHours}h</h3>
+                <h3>{user.total_learning_hours}h</h3>
                 <p>Temps d'apprentissage</p>
               </div>
             </div>
@@ -3795,7 +3870,7 @@ const DashboardView = () => {
                 <TreePine size={24} />
               </div>
               <div className="welcome-stat-info">
-                <h3>{FAKE_USER.treesPlanted}</h3>
+                <h3>{user.trees_planted}</h3>
                 <p>Arbres plantés</p>
               </div>
             </div>
@@ -3804,7 +3879,7 @@ const DashboardView = () => {
                 <Target size={24} />
               </div>
               <div className="welcome-stat-info">
-                <h3>{FAKE_USER.streak} jours</h3>
+                <h3>{user.streak} jours</h3>
                 <p>Série active</p>
               </div>
             </div>
@@ -3820,7 +3895,7 @@ const DashboardView = () => {
               <BookOpen size={20} />
             </div>
           </div>
-          <div className="metric-value">{FAKE_USER.coursesCompleted}</div>
+          <div className="metric-value">{user.courses_completed}</div>
           <div className="metric-label">Sur 340+ disponibles</div>
           <div className="metric-trend">
             <TrendingUp size={16} />
@@ -3835,7 +3910,7 @@ const DashboardView = () => {
               <Leaf size={20} />
             </div>
           </div>
-          <div className="metric-value">{FAKE_USER.carbonOffset} kg</div>
+          <div className="metric-value">{user.carbonOffset} kg</div>
           <div className="metric-label">Équivalent carbone</div>
           <div className="metric-trend">
             <TrendingUp size={16} />
@@ -3850,8 +3925,8 @@ const DashboardView = () => {
               <Award size={20} />
             </div>
           </div>
-          <div className="metric-value" style={{ fontSize: '1.5rem' }}>Expert</div>
-          <div className="metric-label">{FAKE_USER.level}</div>
+          <div className="metric-value" style={{ fontSize: '1.5rem' }}>{user.level}</div>
+          <div className="metric-label">{user.level}</div>
           <div className="metric-trend">
             <TrendingUp size={16} />
             78% vers Maître
@@ -3865,7 +3940,7 @@ const DashboardView = () => {
           <p className="chart-subtitle">Heures d'apprentissage par jour</p>
         </div>
         <ResponsiveContainer width="100%" height={300}>
-          <BarChart data={LEARNING_STATS}>
+          <BarChart data={user.learningStats}>
             <CartesianGrid strokeDasharray="3 3" stroke="#e7e5e4" />
             <XAxis dataKey="day" stroke="#a8a29e" />
             <YAxis stroke="#a8a29e" />

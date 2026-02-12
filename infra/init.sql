@@ -15,18 +15,19 @@ CREATE EXTENSION IF NOT EXISTS "pg_trgm";
 -- Table: users
 CREATE TABLE IF NOT EXISTS users (
     id SERIAL PRIMARY KEY,
-    email VARCHAR(255) UNIQUE NOT NULL,
-    name VARCHAR(255) NOT NULL,
-    hashed_password VARCHAR(255) NOT NULL,
-    avatar VARCHAR(10),
-    level INTEGER DEFAULT 1,
-    total_learning_hours FLOAT DEFAULT 0,
+    email VARCHAR NOT NULL UNIQUE,
+    name VARCHAR NOT NULL,
+    hashed_password VARCHAR NOT NULL,
+    avatar VARCHAR DEFAULT '',
+    level VARCHAR DEFAULT 'Éco-Apprenant Débutant',
+    total_learning_hours FLOAT DEFAULT 0.0,
     courses_completed INTEGER DEFAULT 0,
-    carbon_offset FLOAT DEFAULT 0,
+    carbon_offset FLOAT DEFAULT 0.0,
     trees_planted INTEGER DEFAULT 0,
     streak INTEGER DEFAULT 0,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    is_active BOOLEAN DEFAULT TRUE,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
 -- Table: courses

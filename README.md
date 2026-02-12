@@ -2,173 +2,238 @@
 
 [![CI/CD Pipeline](https://github.com/your-org/ecolearn-ai/actions/workflows/ci-cd.yml/badge.svg)](https://github.com/your-org/ecolearn-ai/actions)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Docker](https://img.shields.io/badge/docker-%230db7ed.svg?style=flat&logo=docker&logoColor=white)](https://www.docker.com/)
+[![Docker](https://img.shields.io/badge/docker-%230db7ed.svg?style=flat\&logo=docker\&logoColor=white)](https://www.docker.com/)
 
-Plateforme d'apprentissage intelligente propulsée par l'IA avec suivi d'impact environnemental en temps réel et programme de reforestation intégré.
+Plateforme d'apprentissage propulsée par l’IA avec suivi d’impact environnemental et intégration reforestation.
+
+---
 
 ## 📋 Table des Matières
 
-- [Vue d'Ensemble](#-vue-densemble)
-- [Architecture](#-architecture)
-- [Technologies](#-technologies)
-- [Prérequis](#-prérequis)
-- [Installation Locale](#-installation-locale)
-- [Déploiement Production](#-déploiement-production)
-- [API Documentation](#-api-documentation)
-- [Tests](#-tests)
-- [CI/CD Pipeline](#-cicd-pipeline)
+* [Vue d'Ensemble](#-vue-densemble)
+* [Architecture](#-architecture)
+* [Technologies](#-technologies)
+* [Prérequis](#-prérequis)
+* [Installation Locale (DEV)](#-installation-locale-dev)
+* [Exécution Production (PROD)](#-exécution-production-prod)
+* [Variables d’Environnement & Secrets](#-variables-denvironnement--secrets)
+* [API Documentation](#-api-documentation)
+* [Tests](#-tests)
+* [CI/CD Pipeline](#-cicd-pipeline)
+
+---
 
 ## 🎯 Vue d'Ensemble
 
-EcoLearn AI est une plateforme d'apprentissage nouvelle génération qui combine :
+EcoLearn AI combine :
 
-- **🤖 IA Générative** : Génération de contenu pédagogique adaptatif via OpenAI GPT
-- **🌍 Impact Environnemental** : Calcul temps réel de l'empreinte carbone
-- **🌳 Reforestation** : Programme de plantation d'arbres intégré
-- **📊 Analytics** : Dashboard interactif avec visualisations D3.js
-- **🔒 Sécurité** : Authentification JWT, chiffrement des données
+* **🤖 IA Générative** : génération de cours adaptés (OpenAI/OpenRouter)
+* **🌍 Impact Environnemental** : estimation d’empreinte carbone par session
+* **🌳 Reforestation** : déclenchement de plantation via API externe (ex: Tree-Nation)
+* **📊 Analytics** : dashboard utilisateur + métriques
+* **🔒 Sécurité** : authentification JWT + gestion de secrets
 
-### Fonctionnalités Principales
+### Fonctionnalités
 
-✅ Génération de cours personnalisés par IA  
-✅ Suivi de progression en temps réel  
-✅ Calcul automatique de l'empreinte carbone  
-✅ Plantation d'arbres via API externe  
-✅ Dashboard utilisateur avec métriques détaillées  
-✅ Système d'achievements et gamification  
-✅ Recommandations IA personnalisées  
+✅ Génération de cours personnalisés
+✅ Suivi de progression
+✅ Calcul carbone (backend)
+✅ Plantation d’arbres via API externe
+✅ Dashboard utilisateur (frontend)
+
+> Note : les features “achievements/gamification” peuvent exister dans la roadmap, mais si ce n’est pas implémenté, évite de le vendre comme “fait”.
+
+---
 
 ## 🏗️ Architecture
 
 ```
-┌─────────────────────────────────────────────────────────────┐
-│                        Frontend (React)                      │
-│  - Interface utilisateur responsive                          │
-│  - Visualisations D3.js (Recharts)                          │
-│  - État global avec Context API                             │
-└────────────────────┬────────────────────────────────────────┘
-                     │ HTTP/HTTPS
-                     ▼
-┌─────────────────────────────────────────────────────────────┐
-│                    Backend (FastAPI)                         │
-│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐      │
-│  │   Learning   │  │   Carbon     │  │   Auth       │      │
-│  │   Service    │  │   Service    │  │   Service    │      │
-│  │  (OpenAI)    │  │  (Calcul +   │  │   (JWT)      │      │
-│  │              │  │   Tree API)  │  │              │      │
-│  └──────────────┘  └──────────────┘  └──────────────┘      │
-└────────────────────┬────────────────────────────────────────┘
-                     │
-                     ▼
-┌─────────────────────────────────────────────────────────────┐
-│              PostgreSQL Database                             │
-│  - Utilisateurs, Cours, Enrollments                         │
-│  - Métriques carbone, Plantations                           │
-│  - Achievements, Analytics                                   │
-└─────────────────────────────────────────────────────────────┘
+┌───────────────────────────────────────────┐
+│ Frontend (React + Vite)                   │
+│ - UI responsive                           │
+│ - Dashboard + charts                       │
+└───────────────────┬───────────────────────┘
+                    │ HTTP
+                    ▼
+┌───────────────────────────────────────────┐
+│ Backend (FastAPI)                         │
+│ - Auth (JWT)                              │
+│ - Learning (LLM)                          │
+│ - Carbon + Tree API                        │
+└───────────────────┬───────────────────────┘
+                    │
+                    ▼
+┌───────────────────────────────────────────┐
+│ PostgreSQL                                 │
+│ - Users, Courses, Sessions                 │
+│ - Carbon metrics, Plantations              │
+└───────────────────────────────────────────┘
 ```
 
-### Conteneurs Docker
+### Conteneurs Docker (actuels)
 
-```yaml
-1. ecolearn_frontend  : React + Nginx       (Port 3000)
-2. ecolearn_backend   : FastAPI + Uvicorn   (Port 8000)
-3. ecolearn        : PostgreSQL 15       (Port 5432)
-4. prometheus         : Monitoring          (Port 9090)
-5. grafana            : Visualisations      (Port 3001)
-```
+**DEV**
+
+* `ecolearn_db` : PostgreSQL (5432)
+* `ecolearn_backend` : FastAPI (8000) avec reload
+* `ecolearn_frontend` : Vite dev server (3000)
+
+**PROD**
+
+* `ecolearn_db` : PostgreSQL
+* `ecolearn_backend` : FastAPI (8000)
+* `ecolearn_frontend` : build statique servi par Nginx (3000 → 80)
+
+> Prometheus/Grafana : **à ajouter seulement** si tu as réellement les services + config.
+
+---
 
 ## 🛠️ Technologies
 
 ### Backend
-- **FastAPI** 0.109.0 - Framework web moderne et performant
-- **SQLAlchemy** 2.0.25 - ORM pour PostgreSQL
-- **OpenAI** 1.10.0 - Génération de contenu IA
-- **Pydantic** 2.5.3 - Validation de données
-- **Python-Jose** 3.3.0 - Gestion JWT
-- **Pytest** 7.4.4 - Tests unitaires et d'intégration
+
+* FastAPI
+* SQLAlchemy + PostgreSQL
+* Pydantic
+* JWT (python-jose)
+* Pytest
 
 ### Frontend
-- **React** 18.2.0 - Framework UI
-- **Recharts** 2.10.3 - Visualisations D3.js
-- **Lucide React** - Icônes modernes
-- **Vite** 5.0.11 - Build tool ultra-rapide
-- **Axios** 1.6.5 - Client HTTP
+
+* React
+* Vite
+* Charts (ex: Recharts)
+* Axios
 
 ### Infrastructure
-- **Docker** & **Docker Compose** - Containerisation
-- **PostgreSQL** 15 - Base de données relationnelle
-- **Nginx** - Reverse proxy et serveur statique
-- **Prometheus** - Métriques et monitoring
-- **Grafana** - Tableaux de bord
 
-### DevOps & CI/CD
-- **GitHub Actions** - Pipeline CI/CD automatisé
-- **AWS ECS** - Orchestration de conteneurs
-- **AWS ECR** - Registry Docker privé
-- **CloudWatch** - Logs et monitoring
-- **SonarCloud** - Analyse de code
-- **Codecov** - Couverture de tests
+* Docker / Docker Compose
+* PostgreSQL
+* Nginx (prod)
+
+### DevOps
+
+* GitHub Actions (CI/CD)
+* (Optionnel) AWS ECS/ECR/CloudWatch si le déploiement est réellement câblé
+
+---
 
 ## 📦 Prérequis
 
-### Développement Local
-```bash
-- Docker 24.0+ et Docker Compose 2.0+
-- Node.js 18+ (pour développement frontend)
-- Python 3.11+ (pour développement backend)
-- Git
-- Compte OpenAI API (clé API)
-```
+### Local
 
-### Production AWS
-```bash
-- Compte AWS avec permissions ECS, ECR, RDS
-- AWS CLI configuré
-- Secrets Manager pour clés API
-- Domaine et certificat SSL (optionnel)
-```
+* Docker + Docker Compose (plugin `docker compose`)
+* Git
+* Une clé API OpenAI/OpenRouter (si tu veux activer la génération IA)
 
-## 🚀 Installation Locale
+---
 
-### 1. Cloner le Repository
+## 🚀 Installation Locale (DEV)
+
+### 1) Cloner le repo
 
 ```bash
 git clone https://github.com/your-org/ecolearn-ai.git
 cd ecolearn-ai
 ```
 
-### 2. Configuration des Variables d'Environnement
+### 2) Créer les fichiers de config
+
+#### A. Variables `.env`
 
 ```bash
 cp .env.example .env
 ```
 
-Éditez `.env` et remplissez vos clés API :
+Exemple :
 
 ```env
-OPENAI_API_KEY=sk-your-key-here
-SECRET_KEY=$(openssl rand -base64 32)
-TREE_API_KEY=your-tree-api-key
+OPENAI_BASE_URL=https://openrouter.ai/api/v1
+OPENAI_MODEL=openai/gpt-4o-mini
+SECRET_KEY=dev-secret-key
+TREE_API_URL=https://api.tree-nation.com/v1
+TREE_API_KEY=
 ```
 
-### 3. Lancer avec Docker Compose
+#### B. Secret API (fichier)
+
+Créer :
 
 ```bash
-# Construire et démarrer tous les services
-docker-compose up --build
-
-# En arrière-plan
-docker-compose up -d
+mkdir -p secrets
+echo "sk-XXXX" > secrets/openai_api_key.txt
 ```
 
-### 4. Accéder aux Services
+### 3) Lancer en DEV
 
-- **Frontend** : http://localhost:3000
-- **Backend API** : http://localhost:8000
-- **API Docs** : http://localhost:8000/docs
+```bash
+docker compose -f docker-compose.dev.yml up --build
+```
 
-### 5. Créer un Utilisateur de Test
+### 4) Accès
+
+* Frontend (DEV) : [http://localhost:3000](http://localhost:3000)
+* Backend API : [http://localhost:8000](http://localhost:8000)
+* Swagger : [http://localhost:8000/docs](http://localhost:8000/docs)
+
+---
+
+## 🌐 Exécution Production (PROD)
+
+### 1) Définir les variables prod
+
+Dans `.env` (ou variables d’environnement) :
+
+* `SECRET_KEY` **obligatoire et forte**
+* `VITE_API_URL` (URL backend utilisée au build du frontend)
+
+Exemple :
+
+```env
+SECRET_KEY=change-me-very-strong
+VITE_API_URL=http://localhost:8000
+ENVIRONMENT=production
+```
+
+### 2) Lancer en PROD
+
+```bash
+docker compose -f docker-compose.prod.yml up --build -d
+```
+
+### 3) Accès
+
+* Frontend (Nginx) : [http://localhost:3000](http://localhost:3000)
+* Backend API : [http://localhost:8000](http://localhost:8000)
+* Swagger : [http://localhost:8000/docs](http://localhost:8000/docs)
+
+---
+
+## 🔐 Variables d’Environnement & Secrets
+
+### Backend (principales)
+
+* `DATABASE_URL` : connexion PostgreSQL (interna docker: `db:5432`)
+* `OPENAI_BASE_URL`, `OPENAI_MODEL`
+* `OPENAI_API_KEY_FILE=/run/secrets/openai_api_key`
+* `SECRET_KEY` : **obligatoire en prod**
+* `ENVIRONMENT=development|production`
+
+### Frontend
+
+* `VITE_API_URL` : URL backend (utilisée par Vite)
+
+---
+
+## 📚 API Documentation
+
+Swagger UI :
+
+* [http://localhost:8000/docs](http://localhost:8000/docs)
+
+Exemples (à adapter à tes routes réelles) :
+
+### Auth - Register
 
 ```bash
 curl -X POST "http://localhost:8000/api/auth/register" \
@@ -180,247 +245,64 @@ curl -X POST "http://localhost:8000/api/auth/register" \
   }'
 ```
 
-## 🌐 Déploiement Production
-
-### Option 1 : Déploiement AWS Automatisé
+### AI - Generate Course
 
 ```bash
-# 1. Configurer AWS CLI
-aws configure
-
-# 2. Exécuter le script de déploiement
-chmod +x scripts/deploy-aws.sh
-./scripts/deploy-aws.sh
+curl -X POST "http://localhost:8000/api/ai/generate-course" \
+  -H "Authorization: Bearer <token>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "topic": "Apprentissage éco-responsable",
+    "difficulty": "intermediate",
+    "duration_hours": 6
+  }'
 ```
 
-### Option 2 : Via GitHub Actions (Recommandé)
-
-1. **Configurer les Secrets GitHub** :
-   ```
-   AWS_ACCESS_KEY_ID
-   AWS_SECRET_ACCESS_KEY
-   OPENAI_API_KEY
-   SONAR_TOKEN
-   ```
-
-2. **Pousser vers main** :
-   ```bash
-   git add .
-   git commit -m "Deploy to production"
-   git push origin main
-   ```
-
-3. **Le pipeline s'exécute automatiquement** :
-   - ✅ Build des images Docker
-   - ✅ Tests automatisés (pytest)
-   - ✅ Analyse de code (SonarCloud)
-   - ✅ Déploiement AWS ECS
-   - ✅ Configuration monitoring CloudWatch
-
-### Architecture AWS ECS
-
-```
-Internet
-    ↓
-Application Load Balancer (ALB)
-    ↓
-┌─────────────────────────────┐
-│  ECS Cluster (Fargate)      │
-│  ┌─────────┐  ┌──────────┐ │
-│  │Frontend │  │ Backend  │ │
-│  │Container│  │Container │ │
-│  └─────────┘  └──────────┘ │
-└─────────────────────────────┘
-          ↓
-    RDS PostgreSQL
-```
-
-## 📚 API Documentation
-
-### Authentification
-
-#### Inscription
-```bash
-POST /api/auth/register
-{
-  "email": "user@example.com",
-  "name": "John Doe",
-  "password": "securepassword"
-}
-```
-
-#### Connexion
-```bash
-POST /api/auth/token
-form-data:
-  username: user@example.com
-  password: securepassword
-```
-
-### Génération de Cours IA
-
-```bash
-POST /api/ai/generate-course
-Authorization: Bearer <token>
-{
-  "topic": "Machine Learning pour l'Écologie",
-  "difficulty": "Intermédiaire",
-  "duration": "6h",
-  "focus_areas": ["Conservation", "Analyse de données"]
-}
-```
-
-### Calcul Empreinte Carbone
-
-```bash
-POST /api/carbon/calculate
-{
-  "learning_hours": 5.0,
-  "course_category": "Intelligence Artificielle"
-}
-```
-
-### Plantation d'Arbres
-
-```bash
-POST /api/trees/plant
-Authorization: Bearer <token>
-{
-  "trees_count": 10,
-  "location": "Amazonie"
-}
-```
-
-**Documentation Complète** : http://localhost:8000/docs (Swagger UI)
+---
 
 ## 🧪 Tests
 
-### Tests Backend
+### Backend
 
 ```bash
-# Tous les tests
-cd backend
-pytest -v
-
-# Avec couverture
-pytest --cov=. --cov-report=html
-
-# Tests spécifiques
-pytest tests/test_api.py -k "test_authentication"
+docker compose -f docker-compose.dev.yml exec backend pytest -v
 ```
 
-### Tests Frontend
+### Frontend
 
 ```bash
-cd frontend
-npm test
-
-# Avec couverture
-npm test -- --coverage
+docker compose -f docker-compose.dev.yml exec frontend npm test
 ```
 
-### Tests d'Intégration
-
-```bash
-docker-compose -f docker-compose.test.yml up --abort-on-container-exit
-```
-
-### CloudWatch (Production)
-
-```bash
-# Visualiser les logs
-aws logs tail /ecs/ecolearn-backend --follow
-
-# Métriques ECS
-aws cloudwatch get-metric-statistics \
-  --namespace AWS/ECS \
-  --metric-name CPUUtilization \
-  --dimensions Name=ServiceName,Value=ecolearn-service \
-  --start-time 2024-01-01T00:00:00Z \
-  --end-time 2024-01-02T00:00:00Z \
-  --period 3600 \
-  --statistics Average
-```
+---
 
 ## 🔄 CI/CD Pipeline
 
-### Pipeline GitHub Actions (4 Stages)
+Pipeline typique :
 
-```yaml
-1. BUILD
-   - Installation dépendances
-   - Build frontend React
-   - Packaging backend
-   - Cache optimisation
+1. **BUILD**
 
-2. TEST
-   - Tests unitaires (pytest)
-   - Tests frontend (vitest)
-   - Couverture de code
-   - Upload vers Codecov
+   * build backend + frontend
+2. **TEST**
 
-3. ANALYZE
-   - Flake8 (linting)
-   - Black (formatting)
-   - MyPy (type checking)
-   - Bandit (sécurité)
-   - SonarCloud (qualité)
+   * pytest + tests frontend
+3. **ANALYZE**
 
-4. DEPLOY
-   - Build images Docker
-   - Push vers AWS ECR
-   - Deploy AWS ECS
-   - Monitoring CloudWatch
-```
+   * lint / sécurité / qualité
+4. **DEPLOY (optionnel)**
 
-### Stratégie de Branches
+   * push images + déploiement (ECS, etc.)
 
-```
-main        → Production (auto-deploy)
-develop     → Staging (auto-deploy)
-feature/*   → PR review required
-hotfix/*    → Fast-track to main
-```
+> Important : si AWS/Sonar/Codecov ne sont pas configurés, enlève-les du README ou marque-les “optionnels / à configurer”.
 
-## 🔐 Sécurité
-
-- ✅ Authentification JWT avec expiration
-- ✅ Mots de passe hashés (bcrypt)
-- ✅ HTTPS en production
-- ✅ CORS configuré
-- ✅ Secrets dans AWS Secrets Manager
-- ✅ Scan de vulnérabilités (Bandit, Safety)
-- ✅ Headers de sécurité HTTP
-
-## 📈 Performance
-
-- ⚡ Temps de réponse API < 200ms (médiane)
-- ⚡ Build frontend < 30s
-- ⚡ Tests complets < 2 min
-- ⚡ Déploiement complet < 10 min
-
-## 🤝 Contribution
-
-1. Fork le projet
-2. Créer une branche (`git checkout -b feature/AmazingFeature`)
-3. Commit (`git commit -m 'Add AmazingFeature'`)
-4. Push (`git push origin feature/AmazingFeature`)
-5. Ouvrir une Pull Request
+---
 
 ## 📄 Licence
 
-MIT License - voir [LICENSE](LICENSE)
-
-## 👥 Auteurs
-
-- **EcoLearn Team** - [GitHub](https://github.com/your-org)
-
-## 🙏 Remerciements
-
-- OpenAI pour l'API GPT
-- Tree-Nation pour l'API de reforestation
-- La communauté open-source
+MIT License - voir `LICENSE`
 
 ---
 
 **🌍 Ensemble, apprenons pour un avenir plus vert ! 🌱**
+
+---
