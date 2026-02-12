@@ -1,6 +1,7 @@
 """
 FastAPI Main Application - EcoLearn AI Backend
 """
+
 from fastapi import FastAPI, Depends, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
@@ -10,7 +11,15 @@ from datetime import datetime, timedelta
 import logging
 from dotenv import load_dotenv
 from database import get_db, engine, Base
-from models import User, Course, Enrollment, CarbonMetric, TreePlantation, Achievement, UserAchievement
+from models import (
+    User,
+    Course,
+    Enrollment,
+    CarbonMetric,
+    TreePlantation,
+    Achievement,
+    UserAchievement,
+)
 import schemas
 from services.learning_service import LearningService
 from services.carbon_service import CarbonService
@@ -33,7 +42,7 @@ Base.metadata.create_all(bind=engine)
 app = FastAPI(
     title="EcoLearn AI API",
     description="API for AI-powered learning with environmental impact tracking",
-    version="1.0.0"
+    version="1.0.0",
 )
 
 # CORS configuration
@@ -80,8 +89,7 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -
 
 
 async def get_current_user(
-    token: str = Depends(oauth2_scheme),
-    db: Session = Depends(get_db)
+    token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)
 ):
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
@@ -113,7 +121,7 @@ def register(user: schemas.UserCreate, db: Session = Depends(get_db)):
         email=user.email,
         name=user.name,
         hashed_password=get_password_hash(user.password),
-        avatar=user.name[:2].upper()
+        avatar=user.name[:2].upper(),
     )
     db.add(db_user)
     db.commit()
@@ -124,8 +132,7 @@ def register(user: schemas.UserCreate, db: Session = Depends(get_db)):
 
 @app.post("/api/auth/token")
 def login(
-    form_data: OAuth2PasswordRequestForm = Depends(),
-    db: Session = Depends(get_db)
+    form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)
 ):
     # OAuth2PasswordRequestForm uses username field for the login identifier
     user = db.query(User).filter(User.email == form_data.username).first()
@@ -138,7 +145,7 @@ def login(
 
     access_token = create_access_token(
         data={"sub": user.email},
-        expires_delta=timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+        expires_delta=timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES),
     )
     logger.info(f"User logged in: {user.email}")
     return {"access_token": access_token, "token_type": "bearer"}
@@ -153,7 +160,7 @@ def get_current_user_info(current_user: User = Depends(get_current_user)):
 async def generate_course(
     request: schemas.AIGenerateRequest,
     current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
 ):
     logger.info(f"Generating course for topic: {request.topic}")
 
@@ -161,7 +168,7 @@ async def generate_course(
         topic=request.topic,
         difficulty=request.difficulty,
         duration=request.duration,
-        focus_areas=request.focus_areas
+        focus_areas=request.focus_areas,
     )
 
     db_course = Course(
@@ -175,7 +182,7 @@ async def generate_course(
         carbon_impact=content.get("estimated_carbon_impact", 15.0),
         content=content,
         ai_generated=True,
-        owner_id=current_user.id
+        owner_id=current_user.id,
     )
     db.add(db_course)
     db.commit()
@@ -184,7 +191,7 @@ async def generate_course(
     return {
         "course": db_course,
         "content": content,
-        "generation_metadata": content.get("generation_metadata", {})
+        "generation_metadata": content.get("generation_metadata", {}),
     }
 
 
@@ -193,7 +200,7 @@ def get_courses(
     skip: int = 0,
     limit: int = 20,
     category: Optional[str] = None,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
 ):
     query = db.query(Course).filter(Course.is_published == True)
     if category:
@@ -213,24 +220,25 @@ def get_course(course_id: int, db: Session = Depends(get_db)):
 def enroll_course(
     course_id: int,
     current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
 ):
     course = db.query(Course).filter(Course.id == course_id).first()
     if not course:
         raise HTTPException(status_code=404, detail="Course not found")
 
-    existing = db.query(Enrollment).filter(
-        Enrollment.user_id == current_user.id,
-        Enrollment.course_id == course_id
-    ).first()
+    existing = (
+        db.query(Enrollment)
+        .filter(
+            Enrollment.user_id == current_user.id, Enrollment.course_id == course_id
+        )
+        .first()
+    )
 
     if existing:
         raise HTTPException(status_code=400, detail="Already enrolled")
 
     enrollment = Enrollment(
-        user_id=current_user.id,
-        course_id=course_id,
-        last_accessed=datetime.utcnow()
+        user_id=current_user.id, course_id=course_id, last_accessed=datetime.utcnow()
     )
     course.enrolled_count += 1
     db.add(enrollment)
@@ -240,17 +248,24 @@ def enroll_course(
 
 
 @app.get("/api/my-courses", response_model=List[schemas.EnrollmentWithCourse])
-def get_my_courses(current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
-    enrollments = db.query(Enrollment).filter(Enrollment.user_id == current_user.id).all()
-    return [{
-        "id": e.id,
-        "course_id": e.course_id,
-        "progress": e.progress,
-        "completed": e.completed,
-        "started_at": e.started_at,
-        "last_accessed": e.last_accessed,
-        "course": e.course
-    } for e in enrollments]
+def get_my_courses(
+    current_user: User = Depends(get_current_user), db: Session = Depends(get_db)
+):
+    enrollments = (
+        db.query(Enrollment).filter(Enrollment.user_id == current_user.id).all()
+    )
+    return [
+        {
+            "id": e.id,
+            "course_id": e.course_id,
+            "progress": e.progress,
+            "completed": e.completed,
+            "started_at": e.started_at,
+            "last_accessed": e.last_accessed,
+            "course": e.course,
+        }
+        for e in enrollments
+    ]
 
 
 @app.patch("/api/enrollments/{enrollment_id}/progress")
@@ -258,12 +273,13 @@ def update_progress(
     enrollment_id: int,
     progress: float,
     current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
 ):
-    enrollment = db.query(Enrollment).filter(
-        Enrollment.id == enrollment_id,
-        Enrollment.user_id == current_user.id
-    ).first()
+    enrollment = (
+        db.query(Enrollment)
+        .filter(Enrollment.id == enrollment_id, Enrollment.user_id == current_user.id)
+        .first()
+    )
 
     if not enrollment:
         raise HTTPException(status_code=404, detail="Enrollment not found")
@@ -294,28 +310,33 @@ def update_progress(
 @app.post("/api/carbon/calculate", response_model=schemas.CarbonCalculationResponse)
 def calculate_carbon(request: schemas.CarbonCalculationRequest):
     return CarbonService.calculate_carbon_footprint(
-        request.learning_hours,
-        request.course_category
+        request.learning_hours, request.course_category
     )
 
 
 @app.get("/api/carbon/metrics", response_model=List[schemas.CarbonMetricResponse])
-def get_carbon_metrics(current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
-    return db.query(CarbonMetric).filter(
-        CarbonMetric.user_id == current_user.id
-    ).order_by(CarbonMetric.year.desc(), CarbonMetric.month.desc()).limit(12).all()
+def get_carbon_metrics(
+    current_user: User = Depends(get_current_user), db: Session = Depends(get_db)
+):
+    return (
+        db.query(CarbonMetric)
+        .filter(CarbonMetric.user_id == current_user.id)
+        .order_by(CarbonMetric.year.desc(), CarbonMetric.month.desc())
+        .limit(12)
+        .all()
+    )
 
 
 @app.post("/api/trees/plant", response_model=schemas.TreePlantationResponse)
 async def plant_trees(
     request: schemas.TreePlantationRequest,
     current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
 ):
     result = await CarbonService.plant_trees_via_api(
         user_id=current_user.id,
         trees_count=request.trees_count,
-        location=request.location
+        location=request.location,
     )
 
     plantation = TreePlantation(
@@ -325,7 +346,7 @@ async def plant_trees(
         organization=result.get("organization"),
         api_transaction_id=result.get("transaction_id"),
         status=result.get("status"),
-        carbon_equivalent=result.get("carbon_offset_kg", 0.0)
+        carbon_equivalent=result.get("carbon_offset_kg", 0.0),
     )
     db.add(plantation)
     current_user.trees_planted += request.trees_count
@@ -341,46 +362,64 @@ async def get_reforestation_projects():
 
 
 @app.get("/api/dashboard", response_model=schemas.UserDashboard)
-def get_dashboard(current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
-    recent_enrollments = db.query(Enrollment).filter(
-        Enrollment.user_id == current_user.id
-    ).order_by(Enrollment.last_accessed.desc()).limit(4).all()
+def get_dashboard(
+    current_user: User = Depends(get_current_user), db: Session = Depends(get_db)
+):
+    recent_enrollments = (
+        db.query(Enrollment)
+        .filter(Enrollment.user_id == current_user.id)
+        .order_by(Enrollment.last_accessed.desc())
+        .limit(4)
+        .all()
+    )
 
-    carbon_metrics = db.query(CarbonMetric).filter(
-        CarbonMetric.user_id == current_user.id
-    ).order_by(CarbonMetric.year, CarbonMetric.month).limit(6).all()
+    carbon_metrics = (
+        db.query(CarbonMetric)
+        .filter(CarbonMetric.user_id == current_user.id)
+        .order_by(CarbonMetric.year, CarbonMetric.month)
+        .limit(6)
+        .all()
+    )
 
-    user_achievements = db.query(UserAchievement).filter(
-        UserAchievement.user_id == current_user.id
-    ).all()
+    user_achievements = (
+        db.query(UserAchievement)
+        .filter(UserAchievement.user_id == current_user.id)
+        .all()
+    )
 
     return {
         "user": current_user,
-        "recent_courses": [{
-            "id": e.id,
-            "course_id": e.course_id,
-            "progress": e.progress,
-            "completed": e.completed,
-            "started_at": e.started_at,
-            "last_accessed": e.last_accessed,
-            "course": e.course
-        } for e in recent_enrollments],
+        "recent_courses": [
+            {
+                "id": e.id,
+                "course_id": e.course_id,
+                "progress": e.progress,
+                "completed": e.completed,
+                "started_at": e.started_at,
+                "last_accessed": e.last_accessed,
+                "course": e.course,
+            }
+            for e in recent_enrollments
+        ],
         "carbon_evolution": carbon_metrics,
-        "achievements": [{
-            "id": ua.achievement.id,
-            "name": ua.achievement.name,
-            "description": ua.achievement.description,
-            "icon": ua.achievement.icon,
-            "points": ua.achievement.points,
-            "unlocked": ua.unlocked,
-            "unlocked_at": ua.unlocked_at
-        } for ua in user_achievements],
+        "achievements": [
+            {
+                "id": ua.achievement.id,
+                "name": ua.achievement.name,
+                "description": ua.achievement.description,
+                "icon": ua.achievement.icon,
+                "points": ua.achievement.points,
+                "unlocked": ua.unlocked,
+                "unlocked_at": ua.unlocked_at,
+            }
+            for ua in user_achievements
+        ],
         "learning_stats": {
             "total_hours": current_user.total_learning_hours,
             "courses_completed": current_user.courses_completed,
             "current_streak": current_user.streak,
-            "level": current_user.level
-        }
+            "level": current_user.level,
+        },
     }
 
 
@@ -392,7 +431,7 @@ def get_platform_stats(db: Session = Depends(get_db)):
         "total_courses": db.query(Course).count(),
         "total_carbon_offset": round(sum(u.carbon_offset for u in users), 2),
         "total_trees_planted": sum(u.trees_planted for u in users),
-        "active_learners": len([u for u in users if u.total_learning_hours > 0])
+        "active_learners": len([u for u in users if u.total_learning_hours > 0]),
     }
 
 
@@ -401,10 +440,11 @@ def health_check():
     return {
         "status": "healthy",
         "service": "ecolearn-api",
-        "timestamp": datetime.utcnow().isoformat()
+        "timestamp": datetime.utcnow().isoformat(),
     }
 
 
 if __name__ == "__main__":
     import uvicorn
+
     uvicorn.run(app, host="0.0.0.0", port=8000)

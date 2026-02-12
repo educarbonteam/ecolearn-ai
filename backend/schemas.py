@@ -1,6 +1,7 @@
 """
 Pydantic schemas for request/response validation
 """
+
 from pydantic import BaseModel, EmailStr, Field
 from typing import Optional, List, Dict, Any
 from datetime import datetime
@@ -31,7 +32,7 @@ class UserResponse(UserBase):
     trees_planted: int
     streak: int
     created_at: datetime
-    
+
     class Config:
         from_attributes = True
 
@@ -60,7 +61,7 @@ class CourseResponse(CourseBase):
     rating: float
     ai_generated: bool
     created_at: datetime
-    
+
     class Config:
         from_attributes = True
 
@@ -77,7 +78,7 @@ class EnrollmentResponse(BaseModel):
     completed: bool
     started_at: datetime
     last_accessed: Optional[datetime]
-    
+
     class Config:
         from_attributes = True
 
@@ -89,7 +90,9 @@ class EnrollmentWithCourse(EnrollmentResponse):
 # AI Course Generation
 class AIGenerateRequest(BaseModel):
     topic: str
-    difficulty: str = Field(default="Débutant", pattern="^(Débutant|Intermédiaire|Avancé)$")
+    difficulty: str = Field(
+        default="Débutant", pattern="^(Débutant|Intermédiaire|Avancé)$"
+    )
     duration: str = Field(default="4h", description="Durée souhaitée")
     focus_areas: Optional[List[str]] = None
 
@@ -109,7 +112,7 @@ class CarbonMetricResponse(BaseModel):
     trees_planted: int
     learning_hours: float
     created_at: datetime
-    
+
     class Config:
         from_attributes = True
 
@@ -139,7 +142,7 @@ class TreePlantationResponse(BaseModel):
     status: str
     carbon_equivalent: float
     planted_at: datetime
-    
+
     class Config:
         from_attributes = True
 
@@ -153,7 +156,7 @@ class AchievementResponse(BaseModel):
     points: int
     unlocked: bool
     unlocked_at: Optional[datetime]
-    
+
     class Config:
         from_attributes = True
 
