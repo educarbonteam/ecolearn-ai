@@ -117,6 +117,19 @@ const RECOMMENDED_COURSES = [
   }
 ];
 
+const FAKE_USER = {
+  id: 1,
+  email: "user@ecolearn.ai",
+  name: "Utilisateur EcoLearn",
+  avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=user",
+  level: "Expert",
+  trees_planted: 42,
+  carbon_offset: 156.5,
+  total_learning_hours: 127.5,
+  courses_completed: 8,
+  streak: 15
+};
+
 const App = () => {
   const [activeView, setActiveView] = useState('dashboard');
   const [mounted, setMounted] = useState(false);
@@ -259,10 +272,6 @@ useEffect(() => {
                       <Users size={18} />
                       Mon Profil
                     </button>
-                    <button className="profile-menu-item">
-                      <Target size={18} />
-                      Paramètres
-                    </button>
                     <div className="profile-menu-divider"></div>
                     <button 
                       className="profile-menu-item logout"
@@ -370,7 +379,7 @@ useEffect(() => {
             {activeView === 'dashboard' && <DashboardView  user={user}/>}
             {activeView === 'generate' && <GenerateCourseView />}
             {activeView === 'courses' && <CoursesView />}
-            {activeView === 'impact' && <ImpactView />}
+            {activeView === 'impact' && <ImpactView user={user} />}
             {activeView === 'profile' && <ProfileView user={user} />}
           </>
         )}
@@ -2265,31 +2274,7 @@ useEffect(() => {
           font-size: 0.875rem;
         }
 
-        .social-buttons {
-          display: grid;
-          grid-template-columns: 1fr 1fr;
-          gap: 0.75rem;
-        }
 
-        .social-btn {
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          gap: 0.5rem;
-          padding: 0.875rem;
-          border: 2px solid var(--border);
-          background: var(--bg-card);
-          border-radius: 10px;
-          font-weight: 600;
-          color: var(--text-primary);
-          cursor: pointer;
-          transition: all 0.3s ease;
-        }
-
-        .social-btn:hover {
-          border-color: var(--primary-light);
-          background: var(--bg-main);
-        }
 
         .auth-switch {
           text-align: center;
@@ -3005,28 +2990,6 @@ const AuthModal = ({ mode, onClose, onSuccess, onSwitchMode }) => {
           )}
           </button>
 
-          <div className="auth-divider">
-            <span>ou continuer avec</span>
-          </div>
-
-          <div className="social-buttons">
-            <button type="button" className="social-btn">
-              <svg width="20" height="20" viewBox="0 0 20 20">
-                <path fill="#4285F4" d="M19.6 10.23c0-.82-.1-1.42-.25-2.05H10v3.72h5.5c-.15.96-.74 2.31-2.04 3.22v2.45h3.16c1.89-1.73 2.98-4.3 2.98-7.34z"/>
-                <path fill="#34A853" d="M13.46 15.13c-.83.59-1.96 1-3.46 1-2.64 0-4.88-1.74-5.68-4.15H1.07v2.52C2.72 17.75 6.09 20 10 20c2.7 0 4.96-.89 6.62-2.42l-3.16-2.45z"/>
-                <path fill="#FBBC05" d="M3.99 10c0-.69.12-1.35.32-1.97V5.51H1.07A9.973 9.973 0 000 10c0 1.61.39 3.14 1.07 4.49l3.24-2.52c-.2-.62-.32-1.28-.32-1.97z"/>
-                <path fill="#EA4335" d="M10 3.88c1.88 0 3.13.81 3.85 1.48l2.84-2.76C14.96.99 12.7 0 10 0 6.09 0 2.72 2.25 1.07 5.51l3.24 2.52C5.12 5.62 7.36 3.88 10 3.88z"/>
-              </svg>
-              Google
-            </button>
-            <button type="button" className="social-btn">
-              <svg width="20" height="20" viewBox="0 0 20 20" fill="#1877F2">
-                <path d="M20 10c0-5.523-4.477-10-10-10S0 4.477 0 10c0 4.991 3.657 9.128 8.438 9.878v-6.987h-2.54V10h2.54V7.797c0-2.506 1.492-3.89 3.777-3.89 1.094 0 2.238.195 2.238.195v2.46h-1.26c-1.243 0-1.63.771-1.63 1.562V10h2.773l-.443 2.89h-2.33v6.988C16.343 19.128 20 14.991 20 10z"/>
-              </svg>
-              Facebook
-            </button>
-          </div>
-
           <div className="auth-switch">
             {mode === 'login' ? (
               <p>
@@ -3143,11 +3106,11 @@ const ProfileView = ({ user }) => {
             <div className="profile-stats-row">
               <div className="profile-stat-item">
                 <Clock size={16} />
-                <span>{user.totalLearningHours}h d'apprentissage</span>
+                <span>{user.total_learning_hours}h d'apprentissage</span>
               </div>
               <div className="profile-stat-item">
                 <TreePine size={16} />
-                <span>{user.treesPlanted} arbres plantés</span>
+                <span>{user.trees_planted} arbres plantés</span>
               </div>
               <div className="profile-stat-item">
                 <Target size={16} />
@@ -3303,28 +3266,6 @@ const ProfileView = ({ user }) => {
                   <span className="activity-time">Il y a 3 jours</span>
                 </div>
               </div>
-            </div>
-          </div>
-
-          {/* Settings Quick Access */}
-          <div className="profile-card">
-            <h3 className="profile-card-title">Paramètres</h3>
-            <div className="settings-list">
-              <button className="setting-item">
-                <Shield size={20} />
-                <span>Confidentialité et sécurité</span>
-                <ChevronRight size={18} />
-              </button>
-              <button className="setting-item">
-                <Bell size={20} />
-                <span>Notifications</span>
-                <ChevronRight size={18} />
-              </button>
-              <button className="setting-item">
-                <Settings size={20} />
-                <span>Préférences d'apprentissage</span>
-                <ChevronRight size={18} />
-              </button>
             </div>
           </div>
 
@@ -3848,6 +3789,25 @@ const normalizePrereq = (p) => String(p).trim();
 
 // Dashboard Component
 const DashboardView = ({ user }) => {
+  // Générer les données d'apprentissage hebdomadaires basées sur les heures totales
+  const learningStatsByDay = [
+    { day: 'Lun', hours: Math.round((user.total_learning_hours / 7) * 0.8) },
+    { day: 'Mar', hours: Math.round((user.total_learning_hours / 7) * 0.6) },
+    { day: 'Mer', hours: Math.round((user.total_learning_hours / 7) * 1.2) },
+    { day: 'Jeu', hours: Math.round((user.total_learning_hours / 7) * 0.7) },
+    { day: 'Ven', hours: Math.round((user.total_learning_hours / 7) * 0.9) },
+    { day: 'Sam', hours: Math.round((user.total_learning_hours / 7) * 1.5) },
+    { day: 'Dim', hours: Math.round((user.total_learning_hours / 7) * 1.3) }
+  ];
+
+  const carbonOffset = (user && user.carbon_offset) ? user.carbon_offset : 0;
+  const impactByCategory = carbonOffset > 0 ? [
+    { name: 'Cours IA', value: Math.round(carbonOffset * 0.45), color: '#10b981' },
+    { name: 'Sustainability', value: Math.round(carbonOffset * 0.3), color: '#059669' },
+    { name: 'Data Science', value: Math.round(carbonOffset * 0.15), color: '#047857' },
+    { name: 'Business', value: Math.round(carbonOffset * 0.1), color: '#065f46' }
+  ] : [];
+
   return (
     <div className="dashboard-grid">
       <div className="welcome-section">
@@ -3910,7 +3870,7 @@ const DashboardView = ({ user }) => {
               <Leaf size={20} />
             </div>
           </div>
-          <div className="metric-value">{user.carbonOffset} kg</div>
+          <div className="metric-value">{user.carbon_offset} kg</div>
           <div className="metric-label">Équivalent carbone</div>
           <div className="metric-trend">
             <TrendingUp size={16} />
@@ -3940,7 +3900,7 @@ const DashboardView = ({ user }) => {
           <p className="chart-subtitle">Heures d'apprentissage par jour</p>
         </div>
         <ResponsiveContainer width="100%" height={300}>
-          <BarChart data={user.learningStats}>
+          <BarChart data={learningStatsByDay}>
             <CartesianGrid strokeDasharray="3 3" stroke="#e7e5e4" />
             <XAxis dataKey="day" stroke="#a8a29e" />
             <YAxis stroke="#a8a29e" />
@@ -3961,6 +3921,40 @@ const DashboardView = ({ user }) => {
             </defs>
           </BarChart>
         </ResponsiveContainer>
+      </div>
+
+      <div className="chart-section">
+        <div className="chart-header">
+          <h3 className="chart-title">Distribution de l'impact par catégorie</h3>
+          <p className="chart-subtitle">Répartition de votre compensation carbone</p>
+        </div>
+        {impactByCategory.length > 0 ? (
+          <ResponsiveContainer width="100%" height={300}>
+            <BarChart data={impactByCategory}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#e7e5e4" />
+              <XAxis dataKey="name" stroke="#a8a29e" />
+              <YAxis stroke="#a8a29e" />
+              <Tooltip 
+                contentStyle={{ 
+                  background: '#ffffff', 
+                  border: '1px solid #e7e5e4', 
+                  borderRadius: '8px',
+                  boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
+                }}
+                formatter={(value) => `${value} kg CO₂`}
+              />
+              <Bar dataKey="value" radius={[8, 8, 0, 0]}>
+                {impactByCategory.map((entry, index) => (
+                  <Cell key={`cell-${index}`} fill={entry.color} />
+                ))}
+              </Bar>
+            </BarChart>
+          </ResponsiveContainer>
+        ) : (
+          <div style={{ padding: '2rem', textAlign: 'center', color: '#a8a29e' }}>
+            Aucune donnée disponible
+          </div>
+        )}
       </div>
 
       <div className="achievements-section">
@@ -4080,7 +4074,26 @@ const CoursesView = () => {
 };
 
 // Impact Component
-const ImpactView = () => {
+const ImpactView = ({ user }) => {
+  const userStats = user || FAKE_USER;
+  
+  // Générer les données des graphiques basées sur les vraies données
+  const carbonEvolution = [
+    { month: 'Jan', carbon: Math.round(userStats.carbon_offset * 0.15), trees: Math.round(userStats.trees_planted * 0.12) },
+    { month: 'Fév', carbon: Math.round(userStats.carbon_offset * 0.2), trees: Math.round(userStats.trees_planted * 0.15) },
+    { month: 'Mar', carbon: Math.round(userStats.carbon_offset * 0.28), trees: Math.round(userStats.trees_planted * 0.2) },
+    { month: 'Avr', carbon: Math.round(userStats.carbon_offset * 0.24), trees: Math.round(userStats.trees_planted * 0.18) },
+    { month: 'Mai', carbon: Math.round(userStats.carbon_offset * 0.33), trees: Math.round(userStats.trees_planted * 0.27) },
+    { month: 'Jun', carbon: userStats.carbon_offset, trees: userStats.trees_planted }
+  ];
+
+  const impactByCategory = [
+    { name: 'Cours IA', value: Math.round(userStats.carbon_offset * 0.45), color: '#10b981' },
+    { name: 'Sustainability', value: Math.round(userStats.carbon_offset * 0.3), color: '#059669' },
+    { name: 'Data Science', value: Math.round(userStats.carbon_offset * 0.15), color: '#047857' },
+    { name: 'Business', value: Math.round(userStats.carbon_offset * 0.1), color: '#065f46' }
+  ];
+
   return (
     <div>
       <div className="impact-hero">
@@ -4096,9 +4109,9 @@ const ImpactView = () => {
             </div>
             <h3 className="impact-card-title">Arbres Plantés</h3>
           </div>
-          <div className="impact-value">{FAKE_USER.treesPlanted}</div>
+          <div className="impact-value">{userStats.trees_planted}</div>
           <p className="impact-description">
-            Vos sessions d'apprentissage ont contribué à la plantation de {FAKE_USER.treesPlanted} arbres,
+            Vos sessions d'apprentissage ont contribué à la plantation de {userStats.trees_planted} arbres,
             aidant à restaurer les écosystèmes forestiers.
           </p>
         </div>
@@ -4110,9 +4123,9 @@ const ImpactView = () => {
             </div>
             <h3 className="impact-card-title">CO₂ Compensé</h3>
           </div>
-          <div className="impact-value">{FAKE_USER.carbonOffset} kg</div>
+          <div className="impact-value">{userStats.carbon_offset} kg</div>
           <p className="impact-description">
-            Équivalent à {Math.round(FAKE_USER.carbonOffset * 2.3)} km parcourus en voiture.
+            Équivalent à {Math.round(userStats.carbon_offset * 2.3)} km parcourus en voiture.
             Votre empreinte carbone d'apprentissage est entièrement compensée.
           </p>
         </div>
@@ -4137,7 +4150,7 @@ const ImpactView = () => {
           <p className="chart-subtitle">Suivi mensuel de votre compensation carbone</p>
         </div>
         <ResponsiveContainer width="100%" height={350}>
-          <LineChart data={CARBON_DATA}>
+          <LineChart data={carbonEvolution}>
             <CartesianGrid strokeDasharray="3 3" stroke="#e7e5e4" />
             <XAxis dataKey="month" stroke="#a8a29e" />
             <YAxis yAxisId="left" stroke="#a8a29e" />
@@ -4172,7 +4185,7 @@ const ImpactView = () => {
         </ResponsiveContainer>
       </div>
 
-      <div className="chart-section" style={{ marginTop: '2rem' }}>
+      {/* <div className="chart-section" style={{ marginTop: '2rem' }}>
         <div className="chart-header">
           <h3 className="chart-title">Distribution de l'impact par catégorie</h3>
           <p className="chart-subtitle">Répartition de votre compensation carbone</p>
@@ -4180,7 +4193,7 @@ const ImpactView = () => {
         <ResponsiveContainer width="100%" height={300}>
           <PieChart>
             <Pie
-              data={IMPACT_DISTRIBUTION}
+              data={impactByCategory}
               cx="50%"
               cy="50%"
               labelLine={false}
@@ -4189,14 +4202,14 @@ const ImpactView = () => {
               fill="#8884d8"
               dataKey="value"
             >
-              {IMPACT_DISTRIBUTION.map((entry, index) => (
+              {impactByCategory.map((entry, index) => (
                 <Cell key={`cell-${index}`} fill={entry.color} />
               ))}
             </Pie>
             <Tooltip />
           </PieChart>
         </ResponsiveContainer>
-      </div>
+      </div> */}
     </div>
   );
 };
