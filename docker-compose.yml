@@ -31,10 +31,12 @@ services:
       dockerfile: Dockerfile
     container_name: ecolearn_backend
     restart: unless-stopped
+    secrets:
+      - openai_api_key
     environment:
       OPENAI_BASE_URL: ${OPENAI_BASE_URL:-https://openrouter.ai/api/v1}
       OPENAI_MODEL: ${OPENAI_MODEL:-openai/gpt-4o-mini}
-      OPENAI_API_KEY: ${OPENAI_API_KEY:-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}
+      OPENAI_API_KEY_FILE: /run/secrets/openai_api_key
       DATABASE_URL: postgresql://ecolearn:ecolearn2024@db:5432/ecolearn
       SECRET_KEY: ${SECRET_KEY:-your-secret-key-change-in-production}
       TREE_API_URL: ${TREE_API_URL:-https://api.tree-nation.com/v1}
@@ -70,3 +72,7 @@ networks:
 
 volumes:
   postgres_data:
+
+secrets:
+  openai_api_key:
+    file: ./secrets/openai_api_key.txt

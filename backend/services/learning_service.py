@@ -2,7 +2,7 @@ import os
 import json
 import logging
 from typing import Dict, List, Any, Optional
-
+from core.config import OPENAI_API_KEY
 from openai import AsyncOpenAI
 
 logger = logging.getLogger(__name__)
@@ -21,7 +21,7 @@ class LearningService:
     @staticmethod
     def _client() -> AsyncOpenAI:
         base_url = _get_env("OPENAI_BASE_URL")
-        api_key = _get_env("OPENAI_API_KEY")
+        api_key = OPENAI_API_KEY
         app_url = os.getenv("APP_URL", "http://localhost:8000")
         app_name = os.getenv("APP_NAME", "EcoLearn AI")
 
