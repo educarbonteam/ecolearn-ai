@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, BarChart, Bar } from 'recharts';
 import { Camera, BookOpen, Leaf, TrendingUp, Award, Clock, Target, Zap, TreePine, Users, Brain, ChevronRight, Play, Check, BarChart3, Sparkles, Send, Loader, Plus, X, Mail, Lock, User, Edit, Settings, Shield, Bell } from 'lucide-react';
+import { authService } from './services/ecolearn';
 
 // Données fictives
 const FAKE_USER = {
@@ -135,6 +136,8 @@ const App = () => {
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [authMode, setAuthMode] = useState('login'); // 'login' or 'signup'
   const [showProfileMenu, setShowProfileMenu] = useState(false);
+
+  //console.log(`🌐 Base URL: ${API_BASE_URL}`);
 
   useEffect(() => {
     setMounted(true);
@@ -2813,33 +2816,72 @@ const AuthModal = ({ mode, onClose, onSuccess, onSwitchMode }) => {
   });
   const [errors, setErrors] = useState({});
   const [isLoading, setIsLoading] = useState(false);
+  const [apiError, setApiError] = useState("");
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     const newErrors = {};
 
+    // ------- Validation frontend (inchangée) -------
     if (mode === 'signup') {
       if (!formData.name) newErrors.name = 'Le nom est requis';
-      if (!formData.email) newErrors.email = 'L\'email est requis';
+      if (!formData.email) newErrors.email = "L'email est requis";
       if (!formData.password) newErrors.password = 'Le mot de passe est requis';
-      if (formData.password.length < 6) newErrors.password = 'Minimum 6 caractères';
+      if (formData.password && formData.password.length < 6) newErrors.password = 'Minimum 6 caractères';
       if (formData.password !== formData.confirmPassword) {
         newErrors.confirmPassword = 'Les mots de passe ne correspondent pas';
       }
     } else {
-      if (!formData.email) newErrors.email = 'L\'email est requis';
+      if (!formData.email) newErrors.email = "L'email est requis";
       if (!formData.password) newErrors.password = 'Le mot de passe est requis';
     }
 
     setErrors(newErrors);
+    if (Object.keys(newErrors).length !== 0) return;
+     setIsLoading(true);
 
-    if (Object.keys(newErrors).length === 0) {
-      setIsLoading(true);
-      // Simulation de connexion
-      setTimeout(() => {
-        onSuccess();
-      }, 1500);
+      try {
+      if (mode === "login") {
+        console.log("Tentative de connexion avec :", formData.email, formData.password);
+        await authService.login(formData.email, formData.password);
+      } else {
+        if(mode === "signup") {
+        await authService.register({
+          name: formData.name,
+          email: formData.email,
+          password: formData.password,
+        });
+        }
+      }
+
+      onSuccess(); // ex: fermer modal + refresh user state
+    } catch (err) {
+      // Gestion erreurs API (FastAPI renvoie souvent detail)
+      const detail =
+        err?.response?.data?.detail ||
+        err?.response?.data?.message ||
+        "Erreur de connexion. Vérifie tes identifiants.";
+
+      // Ex: mapper une erreur email déjà utilisé vers le champ email
+      if (
+        typeof detail === "string" &&
+        detail.toLowerCase().includes("email")
+      ) {
+        setErrors((prev) => ({ ...prev, email: detail }));
+      } else {
+        setApiError(detail);
+      }
+    } finally {
+      setIsLoading(false);
     }
+
+    // if (Object.keys(newErrors).length === 0) {
+    //   setIsLoading(true);
+        
+    //   setTimeout(() => {
+    //     onSuccess();
+    //   }, 1500);
+    // }
   };
 
   return (
@@ -2863,13 +2905,14 @@ const AuthModal = ({ mode, onClose, onSuccess, onSwitchMode }) => {
             {mode === 'login' ? 'Bienvenue !' : 'Créer un compte'}
           </h2>
           <p className="modal-subtitle">
-            {mode === 'login' 
-              ? 'Connectez-vous pour continuer votre apprentissage' 
-              : 'Rejoignez notre communauté d\'apprenants éco-responsables'}
+            {mode === 'login'
+              ? 'Connectez-vous pour continuer votre apprentissage'
+              : "Rejoignez notre communauté d'apprenants éco-responsables"}
           </p>
         </div>
 
         <form className="auth-form" onSubmit={handleSubmit}>
+           {apiError && <div className="form-error global">{apiError}</div>}
           {mode === 'signup' && (
             <div className="form-group">
               <label className="form-label">
@@ -3346,56 +3389,54 @@ const GenerateCourseView = () => {
     'Machine Learning', 'SQL', 'Git', 'Docker', 'React', 'Node.js'
   ];
 
-  const handleGenerate = () => {
-    setIsGenerating(true);
-    
-    // Simulation de génération par IA
-    setTimeout(() => {
-      const course = {
-        title: `${formData.subject} pour ${formData.level}`,
-        description: `Cours personnalisé de ${formData.duration} généré par IA selon vos objectifs: ${formData.goals}`,
-        modules: [
-          {
-            id: 1,
-            title: 'Introduction et Fondamentaux',
-            duration: '45 min',
-            topics: ['Concepts de base', 'Terminologie', 'Contexte historique'],
-            carbonImpact: 1.2
-          },
-          {
-            id: 2,
-            title: 'Concepts Avancés',
-            duration: '1h 30min',
-            topics: ['Techniques principales', 'Best practices', 'Cas d\'usage'],
-            carbonImpact: 2.8
-          },
-          {
-            id: 3,
-            title: 'Mise en Pratique',
-            duration: '2h 15min',
-            topics: ['Projet guidé', 'Exercices pratiques', 'Études de cas'],
-            carbonImpact: 3.5
-          },
-          {
-            id: 4,
-            title: 'Projet Final et Certification',
-            duration: '1h 30min',
-            topics: ['Projet capstone', 'Évaluation', 'Certification'],
-            carbonImpact: 2.1
-          }
-        ],
-        totalDuration: '6h 00min',
-        estimatedCarbon: 9.6,
-        treesToPlant: 2,
-        difficulty: formData.level,
-        learningStyle: formData.learningStyle
-      };
-      
-      setGeneratedCourse(course);
-      setIsGenerating(false);
-      setStep(5);
-    }, 3000);
-  };
+  const SUBJECT_ID_BY_NAME = Object.fromEntries(subjects.map(s => [s.name, s.id]));
+  const LEVEL_ID_BY_NAME = Object.fromEntries(levels.map(l => [l.name, l.id]));
+  const DURATION_ID_BY_NAME = Object.fromEntries(durations.map(d => [d.name, d.id]));
+  const STYLE_ID_BY_NAME = Object.fromEntries(learningStyles.map(s => [s.name, s.id]));
+
+// Normalise un peu (utile si backend est strict)
+const normalizePrereq = (p) => String(p).trim();
+
+  const handleGenerate = async () => {
+  setIsGenerating(true);
+
+  try {
+    // ✅ Construire un payload "backend-friendly"
+    const payload = {
+      subject_id: SUBJECT_ID_BY_NAME[formData.subject] ?? formData.subject,     // ex: "ai"
+      level: LEVEL_ID_BY_NAME[formData.level] ?? formData.level,               // ex: "beginner"
+      duration: DURATION_ID_BY_NAME[formData.duration] ?? formData.duration,   // ex: "short"
+      goals: formData.goals,
+      learning_style: STYLE_ID_BY_NAME[formData.learningStyle] ?? formData.learningStyle, // ex: "visual"
+      prerequisites: selectedPrerequisites.map(normalizePrereq),               // ex: ["Python","Git"]
+    };
+
+    // ⚠️ URL: adapte si ton backend est sur /api ou autre
+    const res = await fetch(`${VITE_API_PREFIX}/courses/generate`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+
+    if (!res.ok) {
+      const txt = await res.text();
+      throw new Error(`Backend error ${res.status}: ${txt}`);
+    }
+
+    const course = await res.json();
+
+    // ✅ Le backend doit renvoyer un objet "course".
+    // Si sa forme diffère, tu adaptes ici (mapping).
+    setGeneratedCourse(course);
+    setStep(5);
+  } catch (err) {
+    console.error(err);
+    // Sans changer le style, on peut au moins faire un alert simple
+    alert("Erreur lors de la génération du cours. Vérifie le backend et le payload.");
+  } finally {
+    setIsGenerating(false);
+  }
+};
 
   const togglePrerequisite = (prereq) => {
     if (selectedPrerequisites.includes(prereq)) {

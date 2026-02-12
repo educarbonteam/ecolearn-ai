@@ -37,6 +37,10 @@ export const authService = {
     return response.data;
   },
 
+  logout: () => {
+    localStorage.removeItem("access_token");
+  },
+
   /**
    * Récupérer les informations de l'utilisateur connecté
    */
