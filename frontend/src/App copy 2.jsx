@@ -1,25 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, BarChart, Bar } from 'recharts';
 import { Camera, BookOpen, Leaf, TrendingUp, Award, Clock, Target, Zap, TreePine, Users, Brain, ChevronRight, Play, Check, BarChart3, Sparkles, Send, Loader, Plus, X, Mail, Lock, User, Edit, Settings, Shield, Bell } from 'lucide-react';
-import CourseReader from './components/CourseReader';
-import './components/CourseReader.css';
 import { authService } from './services/ecolearn';
 import { aiService } from './services/ecolearn';
 import { courseService } from './services/ecolearn';
-import { carbonService } from './services/ecolearn';
 
-// Données fictives
-const FAKE_USER = {
-  name: "Sophie Martin",
-  email: "sophie.martin@example.com",
-  avatar: "SM",
-  totalLearningHours: 47.5,
-  coursesCompleted: 12,
-  carbonOffset: 142.8,
-  treesPlanted: 28,
-  streak: 15,
-  level: "Éco-Apprenant Expert"
-};
 
 const FAKE_COURSES = [
   {
@@ -140,178 +125,84 @@ const App = () => {
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [authMode, setAuthMode] = useState('login'); // 'login' or 'signup'
   const [showProfileMenu, setShowProfileMenu] = useState(false);
-  
-  // États pour le CourseReader
-  const [showCourseReader, setShowCourseReader] = useState(false);
-  const [selectedCourse, setSelectedCourse] = useState(null);
-  const [courseProgress, setCourseProgress] = useState({});
-
   const [user, setUser] = useState(null);
   const isAuthenticated = !!user;
   const [bootLoading, setBootLoading] = useState(true);
- 
- useEffect(() => {
-   let cancelled = false;
- 
-   (async () => {
-     try {
-       setMounted(true);
- 
-       const token = localStorage.getItem("access_token");
-       if (!token) {
-         if (!cancelled) setUser(null);
-         return;
-       }
- 
-       const me = await authService.getCurrentUser(); // appelle /me avec Bearer token
-       if (!cancelled) setUser(me);
-     } catch (e) {
-       localStorage.removeItem("access_token");
-       if (!cancelled) setUser(null);
-     } finally {
-       if (!cancelled) setBootLoading(false);
-     }
-   })();
- 
-   return () => {
-     cancelled = true;
-   };
- }, []);
- 
-   const handleLogout = () => {
-     localStorage.removeItem("access_token");
-     setShowProfileMenu(false);
-     setActiveView('dashboard');
-     setUser(null);
-   };
- 
-   if (bootLoading) {
-     return <Loader label="Initialisation EcoLearn…" />;
-   }
- 
-   const handleAuthSuccess = async () => {
-   try {
-     // 1) Récupérer le user connecté
-     const me = await authService.getCurrentUser();
- 
-     // 2) Mettre à jour l’état global
-     setUser(me);
- 
-     // 3) Persistance simple (ton flag actuel)
-     localStorage.setItem("ecolearn_auth", "true");
- 
-     // 4) Fermer la modal
-     setShowAuthModal(false);
- 
-     // Optionnel: nettoyer le menu profil / view
-     setShowProfileMenu(false);
-     setActiveView("dashboard");
-   } catch (err) {
-     // Si /me échoue => token invalide ou absent => on nettoie tout
-     localStorage.removeItem("access_token");
-     localStorage.removeItem("ecolearn_auth");
-     setUser(null);
-     // Tu peux garder la modal ouverte pour que l’utilisateur réessaie
-     // ou la fermer. Moi je la laisse ouverte.
-     throw err; // important: permet à AuthModal d’afficher l’erreur si besoin
-   }
- };
 
-  // Fonctions pour gérer le CourseReader
-  const handleOpenCourse = (course) => {
-    // Transformer les données du cours au format attendu par CourseReader
-    const formattedCourse = {
-      title: course.title || "Cours sans titre",
-      description: course.description || `Cours ${course.category || 'général'}`,
-      duration: course.duration || "Non spécifié",
-      instructor: course.instructor || "Instructeur",
-      content: course.content || {
-        objectives: [
-          "Comprendre les concepts fondamentaux",
-          "Appliquer les connaissances dans des projets pratiques",
-          "Développer une expertise dans le domaine"
-        ],
-        modules: course.modules ? (
-          typeof course.modules === 'number' ? 
-            generateModulesFromCount(course) : 
-            course.modules
-        ) : []
+useEffect(() => {
+  let cancelled = false;
+
+  (async () => {
+    try {
+      setMounted(true);
+
+      const token = localStorage.getItem("access_token");
+      if (!token) {
+        if (!cancelled) setUser(null);
+        return;
       }
-    };
 
-    setSelectedCourse(formattedCourse);
-    setShowCourseReader(true);
-  };
-
-  const generateModulesFromCount = (course) => {
-    const moduleCount = typeof course.modules === 'number' ? course.modules : 3;
-    const modules = [];
-    
-    for (let i = 0; i < moduleCount; i++) {
-      modules.push({
-        title: `Module ${i + 1}: ${course.category || 'Contenu'} - Partie ${i + 1}`,
-        duration: "2h",
-        description: `Exploration détaillée des concepts clés du module ${i + 1}`,
-        topics: [
-          `Concept fondamental ${i + 1}`,
-          `Application pratique`,
-          `Étude de cas`,
-          `Exercices`
-        ],
-        content: `Ce module couvre les aspects essentiels de ${course.title}. 
-
-Vous apprendrez à maîtriser les techniques et méthodologies fondamentales. Le contenu est structuré pour vous permettre une progression graduelle et une compréhension approfondie.
-
-Les concepts abordés sont directement applicables dans des contextes professionnels et vous permettront de développer des compétences concrètes.`,
-        examples: [
-          `Exemple pratique d'application des concepts`,
-          `Cas d'usage dans l'industrie`,
-          `Démonstration technique`
-        ],
-        exercises: [
-          `Quiz de compréhension sur les concepts clés`,
-          `Projet pratique à réaliser`,
-          `Analyse critique d'un cas réel`
-        ],
-        resources: [
-          { title: "Documentation officielle", url: "#" },
-          { title: "Tutoriel avancé", url: "#" }
-        ]
-      });
+      const me = await authService.getCurrentUser(); // appelle /me avec Bearer token
+      if (!cancelled) setUser(me);
+    } catch (e) {
+      localStorage.removeItem("access_token");
+      if (!cancelled) setUser(null);
+    } finally {
+      if (!cancelled) setBootLoading(false);
     }
-    
-    return modules;
+  })();
+
+  return () => {
+    cancelled = true;
+  };
+}, []);
+
+  const handleLogout = () => {
+    localStorage.removeItem("access_token");
+    setShowProfileMenu(false);
+    setActiveView('dashboard');
+    setUser(null);
   };
 
-  const handleCloseCourseReader = () => {
-    setShowCourseReader(false);
-    setSelectedCourse(null);
-  };
+  if (bootLoading) {
+    return <Loader label="Initialisation EcoLearn…" />;
+  }
 
-  const handleProgressUpdate = (progress) => {
-    console.log("Progression mise à jour:", progress);
-    
-    // Mettre à jour la progression locale
-    if (selectedCourse) {
-      setCourseProgress(prev => ({
-        ...prev,
-        [selectedCourse.title]: progress
-      }));
-    }
+  const handleAuthSuccess = async () => {
+  try {
+    // 1) Récupérer le user connecté
+    const me = await authService.getCurrentUser();
 
-    // Ici, vous pouvez ajouter un appel API pour sauvegarder la progression
-    // Exemple: await courseService.updateProgress(selectedCourse.id, progress);
-  };
+    // 2) Mettre à jour l’état global
+    setUser(me);
 
+    // 3) Persistance simple (ton flag actuel)
+    localStorage.setItem("ecolearn_auth", "true");
+
+    // 4) Fermer la modal
+    setShowAuthModal(false);
+
+    // Optionnel: nettoyer le menu profil / view
+    setShowProfileMenu(false);
+    setActiveView("dashboard");
+  } catch (err) {
+    // Si /me échoue => token invalide ou absent => on nettoie tout
+    localStorage.removeItem("access_token");
+    localStorage.removeItem("ecolearn_auth");
+    setUser(null);
+    // Tu peux garder la modal ouverte pour que l’utilisateur réessaie
+    // ou la fermer. Moi je la laisse ouverte.
+    throw err; // important: permet à AuthModal d’afficher l’erreur si besoin
+  }
+};
+  
   return (
     <div className="app">
       {/* Navigation */}
       <nav className="navbar">
         <div className="nav-container">
           <div className="nav-logo">
-             <div className="nav-logo">
-              <img src="/mylogo.png" alt="Logo" className="nav-logo-image" />
-             </div>
+            <img src="/mylogo.png" alt="Logo" className="nav-logo-image" />
           </div>
           
           {isAuthenticated && (
@@ -354,8 +245,8 @@ Les concepts abordés sont directement applicables dans des contextes profession
                   className="user-avatar-button"
                   onClick={() => setShowProfileMenu(!showProfileMenu)}
                 >
-                  <div className="user-avatar">{user.avatar}</div>
-                  <span className="user-name">{user.name}</span>
+                  <div className="user-avatar">{user?.avatar}</div>
+                  <span className="user-name">{user?.name}</span>
                 </div>
                 
                 {showProfileMenu && (
@@ -478,23 +369,14 @@ Les concepts abordés sont directement applicables dans des contextes profession
           }} />
         ) : (
           <>
-            {activeView === 'dashboard' && <DashboardView  user={user} />}
-            {activeView === 'generate' && <GenerateCourseView onOpenCourse={handleOpenCourse} />}
-            {activeView === 'courses' && <CoursesView onOpenCourse={handleOpenCourse} />}
+            {activeView === 'dashboard' && <DashboardView  user={user}/>}
+            {activeView === 'generate' && <GenerateCourseView />}
+            {activeView === 'courses' && <CoursesView />}
             {activeView === 'impact' && <ImpactView />}
             {activeView === 'profile' && <ProfileView user={user} />}
           </>
         )}
       </main>
-
-      {/* CourseReader Modal */}
-      {showCourseReader && selectedCourse && (
-        <CourseReader
-          course={selectedCourse}
-          onClose={handleCloseCourseReader}
-          onProgressUpdate={handleProgressUpdate}
-        />
-      )}
 
       {/* Styles */}
       <style>{`
@@ -552,7 +434,9 @@ Les concepts abordés sont directement applicables dans des contextes profession
           display: flex;
           align-items: center;
           justify-content: space-between;
-          height: 72px;
+          height: auto;
+          min-height: 80px;
+          padding: 0.5rem 2rem;
         }
 
         .nav-logo {
@@ -561,50 +445,16 @@ Les concepts abordés sont directement applicables dans des contextes profession
           gap: 0.75rem;
         }
 
-        .logo-icon {
-          width: 42px;
-          height: 42px;
-          background: var(--gradient-eco);
-          border-radius: 12px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          color: white;
-          box-shadow: 0 4px 12px rgba(5, 150, 105, 0.3);
-        }
-
-        .logo-text {
-          display: flex;
-          align-items: baseline;
-          gap: 0.25rem;
-        }
-
-        .logo-name {
-          font-size: 1.5rem;
-          font-weight: 700;
-          color: var(--text-primary);
-          letter-spacing: -0.02em;
-        }
-
-        .logo-ai {
-          font-size: 1.5rem;
-          font-weight: 700;
-          background: var(--gradient-eco);
-          -webkit-background-clip: text;
-          -webkit-text-fill-color: transparent;
-          background-clip: text;
+        .nav-logo-image {
+          height: 140px;
+          width: auto;
+          object-fit: contain;
+          max-width: 400px;
         }
 
         .nav-links {
           display: flex;
           gap: 0.5rem;
-        }
-
-      .nav-logo-image {
-          height: 140px;
-          width: auto;
-          object-fit: contain;
-          max-width: 400px;
         }
 
         .nav-links button {
@@ -1824,174 +1674,12 @@ Les concepts abordés sont directement applicables dans des contextes profession
           color: var(--text-secondary);
           cursor: pointer;
           transition: all 0.3s ease;
-          display: flex;
-          align-items: center;
-          gap: 0.25rem;
         }
 
         .suggestion-tag:hover {
           border-color: var(--primary);
           color: var(--primary);
           background: rgba(5, 150, 105, 0.05);
-        }
-
-        .suggestion-tag.selected {
-          background: var(--gradient-eco);
-          color: white;
-          border-color: var(--primary);
-          font-weight: 600;
-        }
-
-        /* Styles pour le sujet personnalisé */
-        .custom-subject-container {
-          background: rgba(5, 150, 105, 0.05);
-          border: 2px solid rgba(5, 150, 105, 0.2);
-          border-radius: 16px;
-          padding: 2rem;
-          margin-top: 2rem;
-          animation: fadeInUp 0.4s ease-out;
-        }
-
-        .custom-subject-label {
-          display: block;
-          font-size: 1rem;
-          font-weight: 600;
-          color: var(--text-primary);
-          margin-bottom: 1rem;
-        }
-
-        .custom-subject-input {
-          width: 100%;
-          padding: 1rem 1.25rem;
-          border: 2px solid var(--border);
-          border-radius: 12px;
-          font-size: 1rem;
-          color: var(--text-primary);
-          background: var(--bg-card);
-          transition: all 0.3s ease;
-        }
-
-        .custom-subject-input:focus {
-          outline: none;
-          border-color: var(--primary);
-          box-shadow: 0 0 0 3px rgba(5, 150, 105, 0.1);
-        }
-
-        .custom-subject-preview {
-          display: flex;
-          align-items: center;
-          gap: 0.75rem;
-          margin-top: 1rem;
-          padding: 1rem;
-          background: var(--bg-card);
-          border-radius: 10px;
-          border: 1px solid var(--border);
-        }
-
-        .preview-icon {
-          font-size: 1.5rem;
-        }
-
-        .preview-text {
-          font-weight: 600;
-          color: var(--primary);
-          font-size: 1rem;
-        }
-
-        /* Styles pour les objectifs personnalisés */
-        .selected-goals-container {
-          background: var(--bg-card);
-          border: 1px solid var(--border);
-          border-radius: 12px;
-          padding: 1.5rem;
-          margin-bottom: 1.5rem;
-        }
-
-        .selected-goals-label {
-          font-size: 0.875rem;
-          font-weight: 600;
-          color: var(--text-secondary);
-          margin-bottom: 1rem;
-        }
-
-        .selected-goals-list {
-          display: grid;
-          gap: 0.75rem;
-        }
-
-        .selected-goal-item {
-          display: flex;
-          align-items: center;
-          gap: 0.75rem;
-          padding: 0.75rem 1rem;
-          background: rgba(5, 150, 105, 0.08);
-          border-radius: 8px;
-          color: var(--text-primary);
-          font-size: 0.9375rem;
-        }
-
-        .goal-check-icon {
-          color: var(--primary);
-          flex-shrink: 0;
-        }
-
-        .remove-goal-btn {
-          margin-left: auto;
-          background: none;
-          border: none;
-          color: var(--text-secondary);
-          cursor: pointer;
-          padding: 0.25rem;
-          border-radius: 4px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          transition: all 0.2s ease;
-        }
-
-        .remove-goal-btn:hover {
-          background: rgba(239, 68, 68, 0.1);
-          color: #ef4444;
-        }
-
-        .custom-goal-input-section {
-          margin-bottom: 1.5rem;
-        }
-
-        .custom-goal-label {
-          display: block;
-          font-size: 0.9375rem;
-          font-weight: 600;
-          color: var(--text-primary);
-          margin-bottom: 0.75rem;
-        }
-
-        .custom-goal-input-wrapper {
-          position: relative;
-        }
-
-        .custom-goal-input {
-          width: 100%;
-          padding: 0.875rem 1.25rem;
-          border: 2px solid var(--border);
-          border-radius: 10px;
-          font-size: 0.9375rem;
-          color: var(--text-primary);
-          background: var(--bg-card);
-          transition: all 0.3s ease;
-        }
-
-        .custom-goal-input:focus {
-          outline: none;
-          border-color: var(--primary);
-          box-shadow: 0 0 0 3px rgba(5, 150, 105, 0.1);
-        }
-
-        .input-hint {
-          font-size: 0.8125rem;
-          color: var(--text-tertiary);
-          margin-top: 0.5rem;
-          font-style: italic;
         }
 
         .summary-card {
@@ -2450,6 +2138,13 @@ Les concepts abordés sont directement applicables dans des contextes profession
           justify-content: center;
           gap: 0.5rem;
           margin-bottom: 1.5rem;
+        }
+
+        .modal-logo-image {
+          height: 200px;
+          width: auto;
+          object-fit: contain;
+          max-width: 600px;
         }
 
         .modal-title {
@@ -3184,7 +2879,6 @@ const AuthModal = ({ mode, onClose, onSuccess, onSwitchMode }) => {
     // Cas B: sinon, auto-login après signup
     await authService.login(formData.email, formData.password);
     await onSuccess();
-    setIsLoading(false);
   } catch (err) {
     const detail =
       err?.response?.data?.detail ||
@@ -3196,6 +2890,8 @@ const AuthModal = ({ mode, onClose, onSuccess, onSwitchMode }) => {
     } else {
       setApiError(detail);
     }
+  } finally {
+    setIsLoading(false);
   }
 };
 
@@ -3355,7 +3051,6 @@ const AuthModal = ({ mode, onClose, onSuccess, onSwitchMode }) => {
     </div>
   );
 };
-
 
 // Landing Content Component
 const LandingContent = ({ onGetStarted }) => {
@@ -3651,7 +3346,7 @@ const ProfileView = ({ user }) => {
 };
 
 // Generate Course Component
-const GenerateCourseView = ({ onOpenCourse }) => {
+const GenerateCourseView = () => {
   const [step, setStep] = useState(1);
   const [formData, setFormData] = useState({
     subject: '',
@@ -3664,11 +3359,6 @@ const GenerateCourseView = ({ onOpenCourse }) => {
   const [isGenerating, setIsGenerating] = useState(false);
   const [generatedCourse, setGeneratedCourse] = useState(null);
   const [selectedPrerequisites, setSelectedPrerequisites] = useState([]);
-  
-  // États pour la saisie personnalisée
-  const [showCustomSubject, setShowCustomSubject] = useState(false);
-  const [customSubject, setCustomSubject] = useState('');
-  const [customGoals, setCustomGoals] = useState([]);
 
   const subjects = [
     { id: 'ai', name: 'Intelligence Artificielle', icon: '🤖', popular: true },
@@ -3705,67 +3395,43 @@ const GenerateCourseView = ({ onOpenCourse }) => {
     'Machine Learning', 'SQL', 'Git', 'Docker', 'React', 'Node.js'
   ];
 
-  const handleGenerate = () => {
-    setIsGenerating(true);
-    
-    // Préparer les objectifs combinés
-    const allGoals = [...customGoals];
-    if (formData.goals) {
-      allGoals.push(formData.goals);
+  const SUBJECT_ID_BY_NAME = Object.fromEntries(subjects.map(s => [s.name, s.id]));
+  const LEVEL_ID_BY_NAME = Object.fromEntries(levels.map(l => [l.name, l.id]));
+  const DURATION_ID_BY_NAME = Object.fromEntries(durations.map(d => [d.name, d.id]));
+  const STYLE_ID_BY_NAME = Object.fromEntries(learningStyles.map(s => [s.name, s.id]));
+
+// Normalise un peu (utile si backend est strict)
+const normalizePrereq = (p) => String(p).trim();
+
+  const handleGenerate = async () => {
+  setIsGenerating(true);
+
+  try {
+    // ✅ Construire un payload "backend-friendly"
+
+  
+    const payload = {
+        topic: `${SUBJECT_ID_BY_NAME[formData.subject] ?? formData.subject} — Objectifs: ${formData.goals} — Style: ${STYLE_ID_BY_NAME[formData.learningStyle] ?? formData.learningStyle}`,
+        difficulty: LEVEL_ID_BY_NAME[formData.level].name || formData.level,
+        duration:  DURATION_ID_BY_NAME[formData.duration].name ?? formData.duration,
+        focus_areas: selectedPrerequisites.map(normalizePrereq), 
     }
-    const goalsText = allGoals.length > 0 ? allGoals.join('. ') : 'Apprentissage général';
-    
-    // Utiliser le sujet personnalisé si présent
-    const finalSubject = showCustomSubject ? customSubject : formData.subject;
-    
-    // Simulation de génération par IA
-    setTimeout(() => {
-      const course = {
-        title: `${finalSubject} pour ${formData.level}`,
-        description: `Cours personnalisé de ${formData.duration} généré par IA selon vos objectifs: ${goalsText}`,
-        modules: [
-          {
-            id: 1,
-            title: 'Introduction et Fondamentaux',
-            duration: '45 min',
-            topics: ['Concepts de base', 'Terminologie', 'Contexte historique'],
-            carbonImpact: 1.2
-          },
-          {
-            id: 2,
-            title: 'Concepts Avancés',
-            duration: '1h 30min',
-            topics: ['Techniques principales', 'Best practices', 'Cas d\'usage'],
-            carbonImpact: 2.8
-          },
-          {
-            id: 3,
-            title: 'Mise en Pratique',
-            duration: '2h 15min',
-            topics: ['Projet guidé', 'Exercices pratiques', 'Études de cas'],
-            carbonImpact: 3.5
-          },
-          {
-            id: 4,
-            title: 'Projet Final et Certification',
-            duration: '1h 30min',
-            topics: ['Projet capstone', 'Évaluation', 'Certification'],
-            carbonImpact: 2.1
-          }
-        ],
-        totalDuration: '6h 00min',
-        estimatedCarbon: 9.6,
-        treesToPlant: 2,
-        difficulty: formData.level,
-        learningStyle: formData.learningStyle,
-        customGoals: allGoals
-      };
-      
-      setGeneratedCourse(course);
-      setIsGenerating(false);
-      setStep(5);
-    }, 3000);
-  };
+
+    // ⚠️ URL: adapte si ton backend est sur /api ou autre
+    const res = await aiService.generateCourse(payload);
+
+    // ✅ Le backend doit renvoyer un objet "course".
+    // Si sa forme diffère, tu adaptes ici (mapping).
+    setGeneratedCourse(res.content);
+    setStep(5);
+  } catch (err) {
+    console.error(err);
+    // Sans changer le style, on peut au moins faire un alert simple
+    alert("Erreur lors de la génération du cours. Vérifie le backend et le payload.");
+  } finally {
+    setIsGenerating(false);
+  }
+};
 
   const togglePrerequisite = (prereq) => {
     if (selectedPrerequisites.includes(prereq)) {
@@ -3825,68 +3491,26 @@ const GenerateCourseView = ({ onOpenCourse }) => {
       {step === 1 && (
         <div className="step-content">
           <h3 className="step-title">Choisissez votre domaine d'apprentissage</h3>
-          <p className="step-description">Sélectionnez le sujet qui vous intéresse ou saisissez le vôtre</p>
+          <p className="step-description">Sélectionnez le sujet qui vous intéresse</p>
           
           <div className="subjects-grid">
             {subjects.map((subject) => (
               <div
                 key={subject.id}
-                className={`subject-card ${formData.subject === subject.name && !showCustomSubject ? 'selected' : ''}`}
-                onClick={() => {
-                  setShowCustomSubject(false);
-                  setCustomSubject('');
-                  setFormData({ ...formData, subject: subject.name });
-                }}
+                className={`subject-card ${formData.subject === subject.name ? 'selected' : ''}`}
+                onClick={() => setFormData({ ...formData, subject: subject.name })}
               >
                 {subject.popular && <div className="popular-badge">Populaire</div>}
                 <div className="subject-icon">{subject.icon}</div>
                 <div className="subject-name">{subject.name}</div>
               </div>
             ))}
-            
-            {/* Carte "Autre" pour saisie personnalisée */}
-            <div
-              className={`subject-card ${showCustomSubject ? 'selected' : ''}`}
-              onClick={() => {
-                setShowCustomSubject(true);
-                setFormData({ ...formData, subject: '' });
-              }}
-            >
-              <div className="subject-icon">✏️</div>
-              <div className="subject-name">Autre</div>
-            </div>
           </div>
-
-          {/* Champ de saisie personnalisé */}
-          {showCustomSubject && (
-            <div className="custom-subject-container">
-              <label className="custom-subject-label">
-                Quel domaine souhaitez-vous apprendre ?
-              </label>
-              <input
-                type="text"
-                className="custom-subject-input"
-                placeholder="Ex: Photographie numérique, Cuisine végétarienne, Marketing digital..."
-                value={customSubject}
-                onChange={(e) => {
-                  setCustomSubject(e.target.value);
-                  setFormData({ ...formData, subject: e.target.value });
-                }}
-                autoFocus
-              />
-              {customSubject && (
-                <div className="custom-subject-preview">
-                  <span className="preview-icon">📚</span>
-                  <span className="preview-text">{customSubject}</span>
-                </div>
-              )}
-            </div>
-          )}
 
           <div className="step-actions">
             <button 
               className="btn-primary btn-large"
-              disabled={!formData.subject && !customSubject}
+              disabled={!formData.subject}
               onClick={() => setStep(2)}
             >
               Continuer
@@ -4011,85 +3635,36 @@ const GenerateCourseView = ({ onOpenCourse }) => {
           <p className="step-description">Décrivez ce que vous souhaitez accomplir avec ce cours</p>
           
           <div className="goals-section">
-            <div className="goals-suggestions" style={{ marginBottom: '1.5rem' }}>
-              <div className="suggestion-label">Sélectionnez vos objectifs (optionnel):</div>
+            <textarea
+              className="goals-textarea"
+              placeholder="Exemple: Je veux comprendre les bases du machine learning pour pouvoir créer mes premiers modèles de classification et prédiction. Mon objectif est de pouvoir travailler sur des projets concrets dans mon entreprise..."
+              value={formData.goals}
+              onChange={(e) => setFormData({ ...formData, goals: e.target.value })}
+              rows={8}
+            />
+            
+            <div className="goals-suggestions">
+              <div className="suggestion-label">Suggestions d'objectifs:</div>
               <div className="suggestion-tags">
-                {[
-                  'Maîtriser les concepts fondamentaux',
-                  'Obtenir une certification',
-                  'Changer de carrière',
-                  'Améliorer mes compétences actuelles',
-                  'Créer des projets concrets',
-                  'Comprendre les bases'
-                ].map((goal, index) => (
-                  <button
-                    key={index}
-                    className={`suggestion-tag ${customGoals.includes(goal) ? 'selected' : ''}`}
-                    onClick={() => {
-                      if (customGoals.includes(goal)) {
-                        setCustomGoals(customGoals.filter(g => g !== goal));
-                      } else {
-                        setCustomGoals([...customGoals, goal]);
-                      }
-                    }}
-                  >
-                    {customGoals.includes(goal) && <Check size={14} style={{ marginRight: '4px' }} />}
-                    {goal}
-                  </button>
-                ))}
+                <button 
+                  className="suggestion-tag"
+                  onClick={() => setFormData({ ...formData, goals: 'Maîtriser les concepts fondamentaux et être capable de les appliquer dans des projets réels' })}
+                >
+                  Maîtrise pratique
+                </button>
+                <button 
+                  className="suggestion-tag"
+                  onClick={() => setFormData({ ...formData, goals: 'Obtenir une certification reconnue pour valoriser mon CV professionnel' })}
+                >
+                  Certification professionnelle
+                </button>
+                <button 
+                  className="suggestion-tag"
+                  onClick={() => setFormData({ ...formData, goals: 'Changer de carrière et acquérir les compétences nécessaires pour un nouveau poste' })}
+                >
+                  Reconversion
+                </button>
               </div>
-            </div>
-
-            {/* Affichage des objectifs sélectionnés */}
-            {customGoals.length > 0 && (
-              <div className="selected-goals-container">
-                <div className="selected-goals-label">Objectifs sélectionnés:</div>
-                <div className="selected-goals-list">
-                  {customGoals.map((goal, index) => (
-                    <div key={index} className="selected-goal-item">
-                      <Check size={16} className="goal-check-icon" />
-                      <span>{goal}</span>
-                      <button
-                        className="remove-goal-btn"
-                        onClick={() => setCustomGoals(customGoals.filter(g => g !== goal))}
-                      >
-                        <X size={14} />
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            <div className="custom-goal-input-section">
-              <label className="custom-goal-label">
-                Ajouter un objectif personnalisé (optionnel):
-              </label>
-              <div className="custom-goal-input-wrapper">
-                <input
-                  type="text"
-                  className="custom-goal-input"
-                  placeholder="Ex: Pouvoir créer une application mobile en 3 mois"
-                  onKeyPress={(e) => {
-                    if (e.key === 'Enter' && e.target.value.trim()) {
-                      setCustomGoals([...customGoals, e.target.value.trim()]);
-                      e.target.value = '';
-                    }
-                  }}
-                />
-                <div className="input-hint">Appuyez sur Entrée pour ajouter</div>
-              </div>
-            </div>
-
-            <div style={{ marginTop: '1.5rem' }}>
-              <label className="custom-goal-label">Description détaillée (optionnel):</label>
-              <textarea
-                className="goals-textarea"
-                placeholder="Décrivez plus en détail votre contexte, vos motivations et ce que vous souhaitez accomplir..."
-                value={formData.goals}
-                onChange={(e) => setFormData({ ...formData, goals: e.target.value })}
-                rows={6}
-              />
             </div>
           </div>
 
@@ -4098,7 +3673,7 @@ const GenerateCourseView = ({ onOpenCourse }) => {
             <div className="summary-items">
               <div className="summary-item">
                 <span className="summary-label">Sujet:</span>
-                <span className="summary-value">{formData.subject || customSubject}</span>
+                <span className="summary-value">{formData.subject}</span>
               </div>
               <div className="summary-item">
                 <span className="summary-label">Niveau:</span>
@@ -4118,12 +3693,6 @@ const GenerateCourseView = ({ onOpenCourse }) => {
                   <span className="summary-value">{selectedPrerequisites.join(', ')}</span>
                 </div>
               )}
-              {customGoals.length > 0 && (
-                <div className="summary-item">
-                  <span className="summary-label">Objectifs:</span>
-                  <span className="summary-value">{customGoals.length} objectif{customGoals.length > 1 ? 's' : ''}</span>
-                </div>
-              )}
             </div>
           </div>
 
@@ -4133,7 +3702,7 @@ const GenerateCourseView = ({ onOpenCourse }) => {
             </button>
             <button 
               className="btn-primary btn-large btn-generate"
-              disabled={customGoals.length === 0 && (!formData.goals || formData.goals.length < 20)}
+              disabled={!formData.goals || formData.goals.length < 20}
               onClick={handleGenerate}
             >
               <Sparkles size={20} />
@@ -4257,52 +3826,7 @@ const GenerateCourseView = ({ onOpenCourse }) => {
               <Plus size={20} />
               Créer un nouveau cours
             </button>
-            <button 
-              className="btn-primary btn-large"
-              onClick={() => {
-                if (generatedCourse && onOpenCourse) {
-                  onOpenCourse({
-                    title: generatedCourse.title,
-                    description: generatedCourse.description,
-                    duration: generatedCourse.totalDuration,
-                    instructor: "EcoLearn AI",
-                    category: "Cours généré par IA",
-                    content: {
-                      objectives: [
-                        "Maîtriser les concepts fondamentaux",
-                        "Appliquer les connaissances pratiques",
-                        "Développer une expertise solide"
-                      ],
-                      modules: generatedCourse.modules.map(module => ({
-                        title: module.title,
-                        duration: module.duration,
-                        description: `Module détaillé couvrant ${module.topics.join(', ')}`,
-                        topics: module.topics,
-                        content: `Ce module vous permettra d'approfondir votre compréhension de ${module.title}. 
-
-Vous explorerez en détail les différents aspects du sujet, avec des exemples concrets et des exercices pratiques pour consolider vos acquis.
-
-Les concepts abordés sont directement applicables dans votre parcours d'apprentissage et vous permettront de progresser efficacement vers vos objectifs.`,
-                        examples: [
-                          "Application pratique des concepts",
-                          "Étude de cas réel",
-                          "Démonstration technique"
-                        ],
-                        exercises: [
-                          "Quiz d'évaluation",
-                          "Projet pratique",
-                          "Exercice d'application"
-                        ],
-                        resources: [
-                          { title: "Documentation", url: "#" },
-                          { title: "Ressources complémentaires", url: "#" }
-                        ]
-                      }))
-                    }
-                  });
-                }
-              }}
-            >
+            <button className="btn-primary btn-large">
               <Play size={20} />
               Commencer maintenant
             </button>
@@ -4362,7 +3886,7 @@ const DashboardView = ({ user }) => {
               <BookOpen size={20} />
             </div>
           </div>
-          <div className="metric-value">{FAKE_USER.coursesCompleted}</div>
+          <div className="metric-value">{user.courses_completed}</div>
           <div className="metric-label">Sur 340+ disponibles</div>
           <div className="metric-trend">
             <TrendingUp size={16} />
@@ -4377,7 +3901,7 @@ const DashboardView = ({ user }) => {
               <Leaf size={20} />
             </div>
           </div>
-          <div className="metric-value">{FAKE_USER.carbonOffset} kg</div>
+          <div className="metric-value">{user.carbonOffset} kg</div>
           <div className="metric-label">Équivalent carbone</div>
           <div className="metric-trend">
             <TrendingUp size={16} />
@@ -4392,8 +3916,8 @@ const DashboardView = ({ user }) => {
               <Award size={20} />
             </div>
           </div>
-          <div className="metric-value" style={{ fontSize: '1.5rem' }}>Expert</div>
-          <div className="metric-label">{FAKE_USER.level}</div>
+          <div className="metric-value" style={{ fontSize: '1.5rem' }}>{user.level}</div>
+          <div className="metric-label">{user.level}</div>
           <div className="metric-trend">
             <TrendingUp size={16} />
             78% vers Maître
@@ -4407,7 +3931,7 @@ const DashboardView = ({ user }) => {
           <p className="chart-subtitle">Heures d'apprentissage par jour</p>
         </div>
         <ResponsiveContainer width="100%" height={300}>
-          <BarChart data={LEARNING_STATS}>
+          <BarChart data={user.learningStats}>
             <CartesianGrid strokeDasharray="3 3" stroke="#e7e5e4" />
             <XAxis dataKey="day" stroke="#a8a29e" />
             <YAxis stroke="#a8a29e" />
@@ -4451,7 +3975,25 @@ const DashboardView = ({ user }) => {
 };
 
 // Courses Component
-const CoursesView = ({ onOpenCourse }) => {
+const CoursesView = () => {
+  const [courses, setCourses] = useState([]);
+  
+  const getCourses= async () => {
+    try 
+    { 
+      const res = await courseService.getCourses(); 
+      
+      setCourses(res); }
+
+     catch (err) { 
+      console.error("Erreur lors de la récupération des cours:", err);
+      // En cas d'erreur, on peut afficher une alerte ou un message d'erreur dans l'UI
+
+    }
+  }
+   useEffect(() => { getCourses(); }, []); 
+
+   console.log("Cours récupérés:", courses); // Debug: vérifier les données reçues du backend
   return (
     <div>
       <div className="courses-header">
@@ -4460,7 +4002,7 @@ const CoursesView = ({ onOpenCourse }) => {
       </div>
 
       <div className="courses-grid">
-        {FAKE_COURSES.map((course) => (
+        {courses?.map((course) => (
           <div key={course.id} className="course-card">
             <div className="course-thumbnail">
               <BookOpen size={80} strokeWidth={1.5} />
@@ -4500,14 +4042,7 @@ const CoursesView = ({ onOpenCourse }) => {
                   <Leaf size={18} />
                   {course.carbonImpact} kg CO₂
                 </div>
-                <button 
-                  className="course-action"
-                  onClick={() => {
-                    if (onOpenCourse) {
-                      onOpenCourse(course);
-                    }
-                  }}
-                >
+                <button className="course-action">
                   {course.progress === 100 ? (
                     <>
                       <Check size={18} />

@@ -322,12 +322,11 @@
 }
 
 .module-number {
-  font-size: 0.875rem;
+  font-size: 1rem;
   font-weight: 600;
   color: #059669;
   text-transform: uppercase;
-  letter-spacing: 0.05em;
-  margin-bottom: 1rem;
+  margin-bottom: 0.5rem;
 }
 
 .module-title {

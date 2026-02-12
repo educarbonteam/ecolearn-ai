@@ -25,6 +25,8 @@ class LearningService:
         app_url = os.getenv("APP_URL", "http://localhost:8000")
         app_name = os.getenv("APP_NAME", "EcoLearn AI")
 
+        print(OPENAI_API_KEY)
+        
         return AsyncOpenAI(
             api_key=api_key,
             base_url=base_url,
@@ -84,6 +86,7 @@ Réponds STRICTEMENT en JSON avec cette structure:
       "title": "Titre du module",
       "duration": "45min",
       "content": "Contenu détaillé...",
+      "topics": ["concept 1", "concept 2"],
       "exercises": ["exercice 1", "exercice 2"],
       "sustainability_note": "Lien avec la durabilité"
     }}

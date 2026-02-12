@@ -153,7 +153,7 @@ const CourseReader = ({ course, onClose, onProgressUpdate }) => {
         <main className="reader-main">
           {/* Module Header */}
           <div className="module-header">
-            <div className="module-number">Module {currentModuleIndex + 1} / {course.content.modules.length}</div>
+            <div className="module-number"><small>{currentModuleIndex + 1} / {course.content.modules.length}</small></div>
             <h2 className="module-title">{currentModule.title}</h2>
             <div className="module-meta">
               <span className="module-duration">
