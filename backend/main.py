@@ -18,6 +18,7 @@ from passlib.context import CryptContext
 from jose import JWTError, jwt
 import os
 import hashlib
+from sqlalchemy.exc import IntegrityError
 
 # Logging configuration
 logging.basicConfig(level=logging.INFO)
@@ -166,7 +167,7 @@ async def generate_course(
 
     db_course = Course(
         title=content["title"],
-        description=content["description"],
+        description=content.get("description"),
         category=request.topic.split()[0] if request.topic else "General",
         difficulty=request.difficulty,
         duration=request.duration,
@@ -177,13 +178,32 @@ async def generate_course(
         ai_generated=True,
         owner_id=current_user.id
     )
-    db.add(db_course)
-    db.commit()
-    db.refresh(db_course)
+
+    try:
+        db.add(db_course)
+        db.flush()  # ✅ gets db_course.id without committing yet
+
+        enrollment = Enrollment(
+            user_id=current_user.id,
+            course_id=db_course.id,
+            progress=0.0,
+            completed=False
+        )
+        db.add(enrollment)
+
+        db.commit()
+        db.refresh(db_course)
+
+    except IntegrityError:
+        db.rollback()
+        # this usually means UNIQUE(user_id, course_id) hit OR some FK issue
+        # since we just created the course, uniqueness is unlikely unless you re-use course_id somehow
+        raise HTTPException(status_code=409, detail="Enrollment already exists or DB constraint error")
 
     return {
         "course": db_course,
         "content": content,
+        "enrrollment": enrollment,
         "generation_metadata": content.get("generation_metadata", {})
     }
 
@@ -241,6 +261,7 @@ def enroll_course(
 
 @app.get("/api/my-courses", response_model=List[schemas.EnrollmentWithCourse])
 def get_my_courses(current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    logger.info(f"Fetching courses for user: {current_user.email}")
     enrollments = db.query(Enrollment).filter(Enrollment.user_id == current_user.id).all()
     return [{
         "id": e.id,

@@ -73,7 +73,7 @@ CREATE TABLE IF NOT EXISTS carbon_metrics (
     month INTEGER NOT NULL,
     carbon_offset FLOAT DEFAULT 0,
     learning_hours FLOAT DEFAULT 0,
-    trees_equivalent INTEGER DEFAULT 0,
+    trees_planted INTEGER DEFAULT 0,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     UNIQUE(user_id, year, month)
 );

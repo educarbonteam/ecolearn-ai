@@ -22,20 +22,45 @@ const CourseReader = ({ course, onClose, onProgressUpdate }) => {
   const [completedModules, setCompletedModules] = useState(new Set());
   const [showSidebar, setShowSidebar] = useState(true);
 
+  const totalModules = course?.content?.modules?.length ?? 0;
+
+  // ✅ 1) Initialiser completedModules depuis course.progress (au chargement du cours)
+  useEffect(() => {
+    if (!course || !totalModules) return;
+
+    const savedProgress = Number(course.progress ?? course.enrollment?.progress ?? 0); // 0..100
+    const completedCount = Math.min(
+      totalModules,
+      Math.max(0, Math.round((savedProgress / 100) * totalModules))
+    );
+
+    const initSet = new Set();
+    for (let i = 0; i < completedCount; i++) initSet.add(i);
+
+    setCompletedModules(initSet);
+    setCurrentModuleIndex(Math.min(completedCount, totalModules - 1));
+  }, [course?.id, totalModules]);
+
   const currentModule = course.content.modules[currentModuleIndex];
-  const progress = (completedModules.size / course.content.modules.length) * 100;
 
-  // Marquer un module comme complété
+  // ✅ 2) Progress recalculé depuis completedModules, mais maintenant il démarre bien
+  const progressRaw = totalModules ? (completedModules.size / totalModules) * 100 : 0;
+  const progress = Math.round(progressRaw * 100) / 100; // 2 décimales en number
+  const progressText = progress.toFixed(2); // "12.34"
+
   const markModuleComplete = () => {
-    const newCompleted = new Set(completedModules);
-    newCompleted.add(currentModuleIndex);
-    setCompletedModules(newCompleted);
+    setCompletedModules(prev => {
+      const newCompleted = new Set(prev);
+      newCompleted.add(currentModuleIndex);
 
-    // Mettre à jour la progression sur le backend
-    if (onProgressUpdate) {
-      const newProgress = (newCompleted.size / course.content.modules.length) * 100;
-      onProgressUpdate(newProgress);
-    }
+      if (onProgressUpdate && totalModules) {
+        const newProgressRaw = (newCompleted.size / totalModules) * 100;
+        const newProgress = Math.round(newProgressRaw * 100) / 100;
+        onProgressUpdate(newProgress);
+      }
+
+      return newCompleted;
+    });
   };
 
   // Navigation
@@ -295,7 +320,6 @@ const CourseReader = ({ course, onClose, onProgressUpdate }) => {
                 className="btn-success"
                 onClick={() => {
                   markModuleComplete();
-                  alert('🎉 Félicitations ! Vous avez complété le cours !');
                   if (onClose) onClose();
                 }}
               >

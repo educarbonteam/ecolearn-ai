@@ -165,6 +165,10 @@ echo "sk-XXXX" > secrets/openai_api_key.txt
 ```
 
 ### 3) Lancer en DEV
+si vous avez deja lance le projet une fois faites d'abord cette commande 
+
+```docker compose -f docker-compose.dev.yml down -v```
+
 
 ```bash
 docker compose -f docker-compose.dev.yml up --build

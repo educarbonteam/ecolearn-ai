@@ -60,6 +60,7 @@ class CourseResponse(CourseBase):
     rating: float
     ai_generated: bool
     created_at: datetime
+    content: Optional[Dict[str, Any]] 
     
     class Config:
         from_attributes = True

@@ -7,70 +7,9 @@ import { authService } from './services/ecolearn';
 import { aiService } from './services/ecolearn';
 import { courseService } from './services/ecolearn';
 import { carbonService } from './services/ecolearn';
+import { dashboardService } from './services/ecolearn';
+import { healthService } from './services/ecolearn';
 
-// Données fictives
-const FAKE_USER = {
-  name: "Sophie Martin",
-  email: "sophie.martin@example.com",
-  avatar: "SM",
-  totalLearningHours: 47.5,
-  coursesCompleted: 12,
-  carbonOffset: 142.8,
-  treesPlanted: 28,
-  streak: 15,
-  level: "Éco-Apprenant Expert"
-};
-
-const FAKE_COURSES = [
-  {
-    id: 1,
-    title: "Introduction à l'IA Responsable",
-    category: "Intelligence Artificielle",
-    duration: "4h 30min",
-    progress: 75,
-    carbonImpact: 12.4,
-    instructor: "Dr. Marie Dubois",
-    difficulty: "Débutant",
-    modules: 8,
-    enrolled: 1247
-  },
-  {
-    id: 2,
-    title: "Développement Durable en Entreprise",
-    category: "Sustainability",
-    duration: "6h 15min",
-    progress: 100,
-    carbonImpact: 18.7,
-    instructor: "Jean-Luc Verdier",
-    difficulty: "Intermédiaire",
-    modules: 12,
-    enrolled: 892
-  },
-  {
-    id: 3,
-    title: "Machine Learning pour la Transition Écologique",
-    category: "Data Science",
-    duration: "8h 00min",
-    progress: 45,
-    carbonImpact: 24.3,
-    instructor: "Dr. Claire Fontaine",
-    difficulty: "Avancé",
-    modules: 15,
-    enrolled: 654
-  },
-  {
-    id: 4,
-    title: "Économie Circulaire & Innovation",
-    category: "Business",
-    duration: "5h 20min",
-    progress: 30,
-    carbonImpact: 15.8,
-    instructor: "Thomas Bernard",
-    difficulty: "Intermédiaire",
-    modules: 10,
-    enrolled: 1089
-  }
-];
 
 const CARBON_DATA = [
   { month: 'Jan', carbon: 25, trees: 5 },
@@ -145,6 +84,7 @@ const App = () => {
   const [showCourseReader, setShowCourseReader] = useState(false);
   const [selectedCourse, setSelectedCourse] = useState(null);
   const [courseProgress, setCourseProgress] = useState({});
+  const [refreshCourse, setRefreshCourse] = useState(false);
 
   const [user, setUser] = useState(null);
   const isAuthenticated = !!user;
@@ -218,77 +158,93 @@ const App = () => {
  };
 
   // Fonctions pour gérer le CourseReader
-  const handleOpenCourse = (course) => {
-    // Transformer les données du cours au format attendu par CourseReader
+  const handleOpenCourse = async (courseR) => {
     const formattedCourse = {
-      title: course.title || "Cours sans titre",
-      description: course.description || `Cours ${course.category || 'général'}`,
-      duration: course.duration || "Non spécifié",
-      instructor: course.instructor || "Instructeur",
-      content: course.content || {
+      id: courseR.id,
+      progress: courseR.progress || 0,
+      title: courseR.course.title || "Cours sans titre",
+      description: courseR.course.description || `Cours ${courseR.course.category || 'général'}`,
+      duration: courseR.course.duration || "Non spécifié",
+      instructor: courseR.course.instructor || "Instructeur",
+      content: courseR.course.content || {
         objectives: [
           "Comprendre les concepts fondamentaux",
           "Appliquer les connaissances dans des projets pratiques",
           "Développer une expertise dans le domaine"
         ],
-        modules: course.modules ? (
-          typeof course.modules === 'number' ? 
-            generateModulesFromCount(course) : 
-            course.modules
-        ) : []
+        modules: courseR.course.modules ? (
+          typeof courseR.course.modules === 'number' ? 
+            [] : 
+            courseR.course.modules
+        ) : [],
+        resources: courseR.course.resources || [ 
+          { title: "Documentation officielle", url: "#" },
+          { title: "Tutoriel avancé", url: "#" }
+        ]
       }
     };
+
+    // const response = await courseService.getCourseById(course.id);
+    // console.log("Réponse du service de cours:", response);
 
     setSelectedCourse(formattedCourse);
     setShowCourseReader(true);
   };
 
-  const generateModulesFromCount = (course) => {
-    const moduleCount = typeof course.modules === 'number' ? course.modules : 3;
-    const modules = [];
+//   const generateModulesFromCount = (course) => {
+//     console.log("Génération de modules à partir du nombre:", course.modules); // Debug: vérifier la valeur de modules
+//     const moduleCount = typeof course.modules === 'number' ? course.modules : 3;
+//     const modules = [];
     
-    for (let i = 0; i < moduleCount; i++) {
-      modules.push({
-        title: `Module ${i + 1}: ${course.category || 'Contenu'} - Partie ${i + 1}`,
-        duration: "2h",
-        description: `Exploration détaillée des concepts clés du module ${i + 1}`,
-        topics: [
-          `Concept fondamental ${i + 1}`,
-          `Application pratique`,
-          `Étude de cas`,
-          `Exercices`
-        ],
-        content: `Ce module couvre les aspects essentiels de ${course.title}. 
+//     for (let i = 0; i < moduleCount; i++) {
+//       modules.push({
+//         title: `Module ${i + 1}: ${course.category || 'Contenu'} - Partie ${i + 1}`,
+//         duration: "2h",
+//         description: `Exploration détaillée des concepts clés du module ${i + 1}`,
+//         topics: [
+//           `Concept fondamental ${i + 1}`,
+//           `Application pratique`,
+//           `Étude de cas`,
+//           `Exercices`
+//         ],
+//         content: `Ce module couvre les aspects essentiels de ${course.title}. 
 
-Vous apprendrez à maîtriser les techniques et méthodologies fondamentales. Le contenu est structuré pour vous permettre une progression graduelle et une compréhension approfondie.
+// Vous apprendrez à maîtriser les techniques et méthodologies fondamentales. Le contenu est structuré pour vous permettre une progression graduelle et une compréhension approfondie.
 
-Les concepts abordés sont directement applicables dans des contextes professionnels et vous permettront de développer des compétences concrètes.`,
-        examples: [
-          `Exemple pratique d'application des concepts`,
-          `Cas d'usage dans l'industrie`,
-          `Démonstration technique`
-        ],
-        exercises: [
-          `Quiz de compréhension sur les concepts clés`,
-          `Projet pratique à réaliser`,
-          `Analyse critique d'un cas réel`
-        ],
-        resources: [
-          { title: "Documentation officielle", url: "#" },
-          { title: "Tutoriel avancé", url: "#" }
-        ]
-      });
-    }
+// Les concepts abordés sont directement applicables dans des contextes professionnels et vous permettront de développer des compétences concrètes.`,
+//         examples: [
+//           `Exemple pratique d'application des concepts`,
+//           `Cas d'usage dans l'industrie`,
+//           `Démonstration technique`
+//         ],
+//         exercises: [
+//           `Quiz de compréhension sur les concepts clés`,
+//           `Projet pratique à réaliser`,
+//           `Analyse critique d'un cas réel`
+//         ],
+//         resources: [
+//           { title: "Documentation officielle", url: "#" },
+//           { title: "Tutoriel avancé", url: "#" }
+//         ]
+//       });
+//     }
     
-    return modules;
-  };
+//     return modules;
+//   };
+
+  
+
+  const onRefreshCourse = () => {
+    setRefreshCourse(prev => !prev); // Toggle pour forcer le rechargement
+   };
 
   const handleCloseCourseReader = () => {
     setShowCourseReader(false);
     setSelectedCourse(null);
+    onRefreshCourse()
   };
 
-  const handleProgressUpdate = (progress) => {
+  const handleProgressUpdate = async (progress) => {
     console.log("Progression mise à jour:", progress);
     
     // Mettre à jour la progression locale
@@ -298,7 +254,9 @@ Les concepts abordés sont directement applicables dans des contextes profession
         [selectedCourse.title]: progress
       }));
     }
-
+    console.log("Progression locale mise à jour:", selectedCourse ? selectedCourse : "Aucun cours sélectionné");
+    const resp = await courseService.updateProgress(selectedCourse.id, progress);
+    console.log("Réponse du service de mise à jour de progression:", resp);
     // Ici, vous pouvez ajouter un appel API pour sauvegarder la progression
     // Exemple: await courseService.updateProgress(selectedCourse.id, progress);
   };
@@ -369,10 +327,6 @@ Les concepts abordés sont directement applicables dans des contextes profession
                     >
                       <Users size={18} />
                       Mon Profil
-                    </button>
-                    <button className="profile-menu-item">
-                      <Target size={18} />
-                      Paramètres
                     </button>
                     <div className="profile-menu-divider"></div>
                     <button 
@@ -478,10 +432,10 @@ Les concepts abordés sont directement applicables dans des contextes profession
           }} />
         ) : (
           <>
-            {activeView === 'dashboard' && <DashboardView  user={user} />}
+            {activeView === 'dashboard' && <DashboardView />}
             {activeView === 'generate' && <GenerateCourseView onOpenCourse={handleOpenCourse} />}
-            {activeView === 'courses' && <CoursesView onOpenCourse={handleOpenCourse} />}
-            {activeView === 'impact' && <ImpactView />}
+            {activeView === 'courses' && <CoursesView onOpenCourse={handleOpenCourse} refreshCourse={refreshCourse} />}
+            {activeView === 'impact' && <ImpactView user={user} />}
             {activeView === 'profile' && <ProfileView user={user} />}
           </>
         )}
@@ -3705,9 +3659,18 @@ const GenerateCourseView = ({ onOpenCourse }) => {
     'Machine Learning', 'SQL', 'Git', 'Docker', 'React', 'Node.js'
   ];
 
-  const handleGenerate = () => {
+
+  const SUBJECT_ID_BY_NAME = Object.fromEntries(subjects.map(s => [s.name, s.id]));
+    const LEVEL_ID_BY_NAME = Object.fromEntries(levels.map(l => [l.name, l.id]));
+    const DURATION_ID_BY_NAME = Object.fromEntries(durations.map(d => [d.name, d.id]));
+    const STYLE_ID_BY_NAME = Object.fromEntries(learningStyles.map(s => [s.name, s.id]));
+  
+  // Normalise un peu (utile si backend est strict)
+  const normalizePrereq = (p) => String(p).trim();
+  
+  const handleGenerate = async () => {
     setIsGenerating(true);
-    
+  
     // Préparer les objectifs combinés
     const allGoals = [...customGoals];
     if (formData.goals) {
@@ -3717,54 +3680,31 @@ const GenerateCourseView = ({ onOpenCourse }) => {
     
     // Utiliser le sujet personnalisé si présent
     const finalSubject = showCustomSubject ? customSubject : formData.subject;
-    
-    // Simulation de génération par IA
-    setTimeout(() => {
-      const course = {
-        title: `${finalSubject} pour ${formData.level}`,
-        description: `Cours personnalisé de ${formData.duration} généré par IA selon vos objectifs: ${goalsText}`,
-        modules: [
-          {
-            id: 1,
-            title: 'Introduction et Fondamentaux',
-            duration: '45 min',
-            topics: ['Concepts de base', 'Terminologie', 'Contexte historique'],
-            carbonImpact: 1.2
-          },
-          {
-            id: 2,
-            title: 'Concepts Avancés',
-            duration: '1h 30min',
-            topics: ['Techniques principales', 'Best practices', 'Cas d\'usage'],
-            carbonImpact: 2.8
-          },
-          {
-            id: 3,
-            title: 'Mise en Pratique',
-            duration: '2h 15min',
-            topics: ['Projet guidé', 'Exercices pratiques', 'Études de cas'],
-            carbonImpact: 3.5
-          },
-          {
-            id: 4,
-            title: 'Projet Final et Certification',
-            duration: '1h 30min',
-            topics: ['Projet capstone', 'Évaluation', 'Certification'],
-            carbonImpact: 2.1
-          }
-        ],
-        totalDuration: '6h 00min',
-        estimatedCarbon: 9.6,
-        treesToPlant: 2,
-        difficulty: formData.level,
-        learningStyle: formData.learningStyle,
-        customGoals: allGoals
-      };
-      
-      setGeneratedCourse(course);
-      setIsGenerating(false);
+
+    try {
+      // ✅ Construire un payload "backend-friendly"
+  
+      const payload = {
+          topic: `${finalSubject} — Objectifs: ${goalsText} — Style: ${STYLE_ID_BY_NAME[formData.learningStyle] ?? formData.learningStyle}`,
+          difficulty: LEVEL_ID_BY_NAME[formData.level].name || formData.level,
+          duration:  DURATION_ID_BY_NAME[formData.duration].name ?? formData.duration,
+          focus_areas: selectedPrerequisites.map(normalizePrereq), 
+      }
+  
+      // ⚠️ URL: adapte si ton backend est sur /api ou autre
+      const res = await aiService.generateCourse(payload);
+  
+      // ✅ Le backend doit renvoyer un objet "course".
+      // Si sa forme diffère, tu adaptes ici (mapping).
+      setGeneratedCourse(res);
       setStep(5);
-    }, 3000);
+    } catch (err) {
+      console.error(err);
+      // Sans changer le style, on peut au moins faire un alert simple
+      alert("Erreur lors de la génération du cours. Vérifie le backend et le payload.");
+    } finally {
+      setIsGenerating(false);
+    }
   };
 
   const togglePrerequisite = (prereq) => {
@@ -4186,24 +4126,24 @@ const GenerateCourseView = ({ onOpenCourse }) => {
           <div className="generated-course-card">
             <div className="course-generated-header">
               <div>
-                <h2 className="course-generated-title">{generatedCourse.title}</h2>
-                <p className="course-generated-description">{generatedCourse.description}</p>
+                <h2 className="course-generated-title">{generatedCourse.course.title}</h2>
+                <p className="course-generated-description">{generatedCourse.course.description}</p>
               </div>
               <div className="course-badges">
                 <div className="course-badge primary">
                   <Clock size={18} />
-                  {generatedCourse.totalDuration}
+                  {generatedCourse.duration}
                 </div>
-                <div className="course-badge success">
+                {/* <div className="course-badge success">
                   <TreePine size={18} />
                   {generatedCourse.treesToPlant} arbres
-                </div>
+                </div> */}
               </div>
             </div>
 
             <div className="modules-list">
               <h4 className="modules-title">Modules du cours</h4>
-              {generatedCourse.modules.map((module, index) => (
+              {generatedCourse.content.modules.map((module, index) => (
                 <div key={module.id} className="module-item">
                   <div className="module-number">{index + 1}</div>
                   <div className="module-content">
@@ -4216,7 +4156,7 @@ const GenerateCourseView = ({ onOpenCourse }) => {
                         </span>
                         <span className="module-carbon">
                           <Leaf size={14} />
-                          {module.carbonImpact} kg CO₂
+                          {module.carbon_impact} kg CO₂
                         </span>
                       </div>
                     </div>
@@ -4235,12 +4175,13 @@ const GenerateCourseView = ({ onOpenCourse }) => {
               <div className="impact-stats">
                 <div className="impact-stat">
                   <Leaf size={32} className="impact-stat-icon" />
-                  <div className="impact-stat-value">{generatedCourse.estimatedCarbon} kg</div>
+                  <div className="impact-stat-value">{generatedCourse.course.carbon_impact} g</div>
                   <div className="impact-stat-label">CO₂ à compenser</div>
                 </div>
                 <div className="impact-stat">
                   <TreePine size={32} className="impact-stat-icon" />
-                  <div className="impact-stat-value">{generatedCourse.treesToPlant}</div>
+                  {/* <div className="impact-stat-value">{generatedCourse.treesToPlant}</div> */}
+                  <div className="impact-stat-value">0</div>
                   <div className="impact-stat-label">Arbres à planter</div>
                 </div>
                 <div className="impact-stat">
@@ -4261,45 +4202,7 @@ const GenerateCourseView = ({ onOpenCourse }) => {
               className="btn-primary btn-large"
               onClick={() => {
                 if (generatedCourse && onOpenCourse) {
-                  onOpenCourse({
-                    title: generatedCourse.title,
-                    description: generatedCourse.description,
-                    duration: generatedCourse.totalDuration,
-                    instructor: "EcoLearn AI",
-                    category: "Cours généré par IA",
-                    content: {
-                      objectives: [
-                        "Maîtriser les concepts fondamentaux",
-                        "Appliquer les connaissances pratiques",
-                        "Développer une expertise solide"
-                      ],
-                      modules: generatedCourse.modules.map(module => ({
-                        title: module.title,
-                        duration: module.duration,
-                        description: `Module détaillé couvrant ${module.topics.join(', ')}`,
-                        topics: module.topics,
-                        content: `Ce module vous permettra d'approfondir votre compréhension de ${module.title}. 
-
-Vous explorerez en détail les différents aspects du sujet, avec des exemples concrets et des exercices pratiques pour consolider vos acquis.
-
-Les concepts abordés sont directement applicables dans votre parcours d'apprentissage et vous permettront de progresser efficacement vers vos objectifs.`,
-                        examples: [
-                          "Application pratique des concepts",
-                          "Étude de cas réel",
-                          "Démonstration technique"
-                        ],
-                        exercises: [
-                          "Quiz d'évaluation",
-                          "Projet pratique",
-                          "Exercice d'application"
-                        ],
-                        resources: [
-                          { title: "Documentation", url: "#" },
-                          { title: "Ressources complémentaires", url: "#" }
-                        ]
-                      }))
-                    }
-                  });
+                  onOpenCourse(generatedCourse);
                 }
               }}
             >
@@ -4314,12 +4217,29 @@ Les concepts abordés sont directement applicables dans votre parcours d'apprent
 };
 
 // Dashboard Component
-const DashboardView = ({ user }) => {
+const DashboardView = () => {
+  const [dashboardData, setDashboardData] = useState({
+    user: {},
+    learningStats: [],
+    achievements: [],
+    recent_courses: [],
+    learning_stats: []
+  });
+
+  const getDashBoard = async () => {
+      const response = await dashboardService.getDashboard();
+      setDashboardData(response);
+  };
+  
+  useEffect(() => {
+    getDashBoard();
+  }, []);
+
   return (
     <div className="dashboard-grid">
       <div className="welcome-section">
         <div className="welcome-content">
-          <h2 className="welcome-greeting">Bonjour, {user.name}! 👋</h2>
+          <h2 className="welcome-greeting">Bonjour, {dashboardData.user?.name || "Utilisateur"}! 👋</h2>
           <p className="welcome-subtitle">Voici votre impact d'apprentissage aujourd'hui</p>
           
           <div className="welcome-stats">
@@ -4328,7 +4248,7 @@ const DashboardView = ({ user }) => {
                 <Clock size={24} />
               </div>
               <div className="welcome-stat-info">
-                <h3>{user.total_learning_hours}h</h3>
+                <h3>{dashboardData.user?.total_learning_hours || 0}h</h3>
                 <p>Temps d'apprentissage</p>
               </div>
             </div>
@@ -4337,7 +4257,7 @@ const DashboardView = ({ user }) => {
                 <TreePine size={24} />
               </div>
               <div className="welcome-stat-info">
-                <h3>{user.trees_planted}</h3>
+                <h3>{dashboardData.user?.trees_planted || 0}</h3>
                 <p>Arbres plantés</p>
               </div>
             </div>
@@ -4346,7 +4266,7 @@ const DashboardView = ({ user }) => {
                 <Target size={24} />
               </div>
               <div className="welcome-stat-info">
-                <h3>{user.streak} jours</h3>
+                <h3>{dashboardData.user?.streak || 0} jours</h3>
                 <p>Série active</p>
               </div>
             </div>
@@ -4362,7 +4282,7 @@ const DashboardView = ({ user }) => {
               <BookOpen size={20} />
             </div>
           </div>
-          <div className="metric-value">{FAKE_USER.coursesCompleted}</div>
+          <div className="metric-value">{dashboardData.user?.coursesCompleted || 0}</div>
           <div className="metric-label">Sur 340+ disponibles</div>
           <div className="metric-trend">
             <TrendingUp size={16} />
@@ -4377,7 +4297,7 @@ const DashboardView = ({ user }) => {
               <Leaf size={20} />
             </div>
           </div>
-          <div className="metric-value">{FAKE_USER.carbonOffset} kg</div>
+          <div className="metric-value">{dashboardData.user?.carbon_offset || 0} kg</div>
           <div className="metric-label">Équivalent carbone</div>
           <div className="metric-trend">
             <TrendingUp size={16} />
@@ -4392,8 +4312,8 @@ const DashboardView = ({ user }) => {
               <Award size={20} />
             </div>
           </div>
-          <div className="metric-value" style={{ fontSize: '1.5rem' }}>Expert</div>
-          <div className="metric-label">{FAKE_USER.level}</div>
+          <div className="metric-value" style={{ fontSize: '1.5rem' }}>{dashboardData.user?.level || "Débutant"}</div>
+          <div className="metric-label">{dashboardData.user?.level || "Niveau inconnu"}</div>
           <div className="metric-trend">
             <TrendingUp size={16} />
             78% vers Maître
@@ -4407,7 +4327,7 @@ const DashboardView = ({ user }) => {
           <p className="chart-subtitle">Heures d'apprentissage par jour</p>
         </div>
         <ResponsiveContainer width="100%" height={300}>
-          <BarChart data={LEARNING_STATS}>
+          <BarChart data={dashboardData.learning_stats || LEARNING_STATS}>
             <CartesianGrid strokeDasharray="3 3" stroke="#e7e5e4" />
             <XAxis dataKey="day" stroke="#a8a29e" />
             <YAxis stroke="#a8a29e" />
@@ -4435,7 +4355,7 @@ const DashboardView = ({ user }) => {
           <h3 className="section-title">Vos Réalisations</h3>
         </div>
         <div className="achievements-grid">
-          {ACHIEVEMENTS.map((achievement, index) => (
+          {dashboardData.achievements?.map((achievement, index) => (
             <div key={index} className={`achievement-card ${!achievement.unlocked ? 'locked' : ''}`}>
               <div className="achievement-icon">
                 <achievement.icon size={28} />
@@ -4451,7 +4371,25 @@ const DashboardView = ({ user }) => {
 };
 
 // Courses Component
-const CoursesView = ({ onOpenCourse }) => {
+const CoursesView = ({ onOpenCourse, refreshCourse }) => {
+
+   const [courses, setCourses] = useState([]);
+    
+    const getCourses= async () => {
+      try 
+      { 
+        const res = await courseService.getMyCourses(); 
+        
+        setCourses(res); }
+  
+       catch (err) { 
+        console.error("Erreur lors de la récupération des cours:", err);
+        // En cas d'erreur, on peut afficher une alerte ou un message d'erreur dans l'UI
+  
+      }
+    }
+     useEffect(() => { getCourses(); }, [refreshCourse]); 
+
   return (
     <div>
       <div className="courses-header">
@@ -4460,27 +4398,27 @@ const CoursesView = ({ onOpenCourse }) => {
       </div>
 
       <div className="courses-grid">
-        {FAKE_COURSES.map((course) => (
+        {courses.map((course) => (
           <div key={course.id} className="course-card">
             <div className="course-thumbnail">
               <BookOpen size={80} strokeWidth={1.5} />
             </div>
             <div className="course-content">
               <div className="course-header">
-                <span className="course-category">{course.category}</span>
-                <h3 className="course-title">{course.title}</h3>
+                <span className="course-category">{course.course.category}</span>
+                <h3 className="course-title">{course.course.title}</h3>
                 <div className="course-meta">
                   <div className="course-meta-item">
                     <Clock size={16} />
-                    {course.duration}
+                    {course.course.duration}
                   </div>
                   <div className="course-meta-item">
                     <BookOpen size={16} />
-                    {course.modules} modules
+                    {course.course.modules} modules
                   </div>
                   <div className="course-meta-item">
                     <Users size={16} />
-                    {course.enrolled} inscrits
+                    {course.course.enrolled_count} inscrits
                   </div>
                 </div>
               </div>
@@ -4488,7 +4426,7 @@ const CoursesView = ({ onOpenCourse }) => {
               <div className="progress-section">
                 <div className="progress-header">
                   <span className="progress-label">Progression</span>
-                  <span className="progress-value">{course.progress}%</span>
+                  <span className="progress-value">{Math.round(course.progress ?? 0)}%</span>
                 </div>
                 <div className="progress-bar">
                   <div className="progress-fill" style={{ width: `${course.progress}%` }} />
@@ -4498,7 +4436,7 @@ const CoursesView = ({ onOpenCourse }) => {
               <div className="course-footer">
                 <div className="carbon-badge">
                   <Leaf size={18} />
-                  {course.carbonImpact} kg CO₂
+                  {course.course.carbon_impact} kg CO₂
                 </div>
                 <button 
                   className="course-action"
@@ -4554,7 +4492,7 @@ const CoursesView = ({ onOpenCourse }) => {
 };
 
 // Impact Component
-const ImpactView = () => {
+const ImpactView = ({ user }) => {
   return (
     <div>
       <div className="impact-hero">
